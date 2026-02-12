@@ -5,26 +5,31 @@ use thirtyfour::prelude::*;
 use crate::helpers::auth::authenticate_browser;
 use crate::helpers::browser::BrowserSession;
 use crate::helpers::server_helpers::{
-    create_author_with_name, create_default_author, create_default_book, spawn_app_with_auth,
+    create_default_genre, create_library_item, spawn_app_with_auth,
 };
 use crate::helpers::wait::{wait_for_text, wait_for_visible};
 
 #[tokio::test]
 async fn tab_switching_loads_correct_entity_list() {
     let app = spawn_app_with_auth().await;
-    let author = create_default_author(&app).await;
-    let _book = create_default_book(&app, author.id).await;
+    create_library_item(&app, "Test Book").await;
+    create_default_genre(&app).await;
 
     let session = BrowserSession::new(&app.address).await.unwrap();
     authenticate_browser(&session, &app).await.unwrap();
 
-    // Navigate to data page
+    // Navigate to data page (defaults to Library tab)
     session.goto("/data").await.unwrap();
     wait_for_visible(&session.driver, "#data-content")
         .await
         .unwrap();
 
-    // Click "Authors" tab (desktop)
+    // Verify library content shows the book
+    wait_for_text(&session.driver, "#data-content", "Test Book")
+        .await
+        .unwrap();
+
+    // Click "Genres" tab (desktop)
     let tabs = session
         .driver
         .find_all(By::Css("nav[role='tablist'] button[role='tab']"))
@@ -32,14 +37,14 @@ async fn tab_switching_loads_correct_entity_list() {
         .unwrap();
     for tab in &tabs {
         let text = tab.text().await.unwrap_or_default();
-        if text.contains("Authors") {
+        if text.contains("Genres") {
             tab.click().await.unwrap();
             break;
         }
     }
 
-    // Wait for author list to load
-    wait_for_text(&session.driver, "#data-content", "Test Author")
+    // Wait for genre list to load
+    wait_for_text(&session.driver, "#data-content", "Test Genre")
         .await
         .unwrap();
 
@@ -49,22 +54,25 @@ async fn tab_switching_loads_correct_entity_list() {
 #[tokio::test]
 async fn search_filters_list() {
     let app = spawn_app_with_auth().await;
-    create_author_with_name(&app, "Jane Austen").await;
-    create_author_with_name(&app, "Mark Twain").await;
+    create_library_item(&app, "Pride and Prejudice").await;
+    create_library_item(&app, "War and Peace").await;
 
     let session = BrowserSession::new(&app.address).await.unwrap();
     authenticate_browser(&session, &app).await.unwrap();
 
-    session.goto("/data?type=authors").await.unwrap();
-    wait_for_visible(&session.driver, "#author-list")
+    session.goto("/data").await.unwrap();
+    wait_for_visible(&session.driver, "#user-book-list")
         .await
         .unwrap();
 
-    // Both authors should be visible initially
+    // Both books should be visible initially
     let body = session.driver.find(By::Css("#data-content")).await.unwrap();
     let text = body.text().await.unwrap();
-    assert!(text.contains("Jane Austen"), "Should show Jane Austen");
-    assert!(text.contains("Mark Twain"), "Should show Mark Twain");
+    assert!(
+        text.contains("Pride and Prejudice"),
+        "Should show Pride and Prejudice"
+    );
+    assert!(text.contains("War and Peace"), "Should show War and Peace");
 
     // Type in search field
     let search = session
@@ -72,17 +80,17 @@ async fn search_filters_list() {
         .find(By::Css("input[type='search']"))
         .await
         .unwrap();
-    search.send_keys("Jane").await.unwrap();
+    search.send_keys("Pride").await.unwrap();
 
     // Wait for debounce (300ms) + fragment load
     tokio::time::sleep(Duration::from_millis(500)).await;
 
     // Wait for the list to update with filtered results
-    wait_for_text(&session.driver, "#data-content", "Jane Austen")
+    wait_for_text(&session.driver, "#data-content", "Pride and Prejudice")
         .await
         .unwrap();
 
-    // Mark Twain should be filtered out
+    // War and Peace should be filtered out
     let text = session
         .driver
         .find(By::Css("#data-content"))
@@ -92,8 +100,8 @@ async fn search_filters_list() {
         .await
         .unwrap();
     assert!(
-        !text.contains("Mark Twain"),
-        "Mark Twain should be filtered out"
+        !text.contains("War and Peace"),
+        "War and Peace should be filtered out"
     );
 
     session.quit().await;
@@ -103,15 +111,15 @@ async fn search_filters_list() {
 async fn pagination_next_and_prev() {
     let app = spawn_app_with_auth().await;
 
-    // Create 11 authors -- default page size is 10
+    // Create 11 library items -- default page size is 10
     for i in 0..11 {
-        create_author_with_name(&app, &format!("Author {i:02}")).await;
+        create_library_item(&app, &format!("Book {i:02}")).await;
     }
 
     let session = BrowserSession::new(&app.address).await.unwrap();
     authenticate_browser(&session, &app).await.unwrap();
 
-    session.goto("/data?type=authors").await.unwrap();
+    session.goto("/data").await.unwrap();
     wait_for_visible(&session.driver, ".pagination-controls")
         .await
         .unwrap();
@@ -137,16 +145,16 @@ async fn pagination_next_and_prev() {
 
     // Wait for page 2
     tokio::time::sleep(Duration::from_millis(300)).await;
-    let pagination = session
-        .driver
-        .find(By::Css(".pagination-controls"))
-        .await
-        .unwrap();
     wait_for_text(&session.driver, ".pagination-controls", "Page 2 of 2")
         .await
         .unwrap();
 
     // Click Prev
+    let pagination = session
+        .driver
+        .find(By::Css(".pagination-controls"))
+        .await
+        .unwrap();
     let prev_btn = pagination
         .find(By::XPath(".//button[contains(., 'Prev')]"))
         .await
@@ -163,31 +171,31 @@ async fn pagination_next_and_prev() {
 #[tokio::test]
 async fn sort_by_column_reverses_order() {
     let app = spawn_app_with_auth().await;
-    create_author_with_name(&app, "Alpha Author").await;
-    create_author_with_name(&app, "Zulu Writer").await;
+    create_library_item(&app, "Alpha Book").await;
+    create_library_item(&app, "Zulu Novel").await;
 
     let session = BrowserSession::new(&app.address).await.unwrap();
     authenticate_browser(&session, &app).await.unwrap();
 
-    session.goto("/data?type=authors").await.unwrap();
-    wait_for_visible(&session.driver, "#author-list")
+    session.goto("/data").await.unwrap();
+    wait_for_visible(&session.driver, "#user-book-list")
         .await
         .unwrap();
 
-    // Click "Name" sort header to sort ascending
-    let name_header = session
+    // Click "Title" sort header to sort ascending
+    let title_header = session
         .driver
-        .find(By::XPath("//thead//button[contains(., 'Name')]"))
+        .find(By::XPath("//thead//button[contains(., 'Title')]"))
         .await
         .unwrap();
-    name_header.click().await.unwrap();
+    title_header.click().await.unwrap();
 
     tokio::time::sleep(Duration::from_millis(300)).await;
 
     // Get row order after first click (ascending)
     let rows = session
         .driver
-        .find_all(By::Css("#author-list tbody tr"))
+        .find_all(By::Css("#user-book-list tbody tr"))
         .await
         .unwrap();
     let mut first_order = Vec::new();
@@ -196,18 +204,18 @@ async fn sort_by_column_reverses_order() {
     }
 
     // Click again to reverse
-    let name_header = session
+    let title_header = session
         .driver
-        .find(By::XPath("//thead//button[contains(., 'Name')]"))
+        .find(By::XPath("//thead//button[contains(., 'Title')]"))
         .await
         .unwrap();
-    name_header.click().await.unwrap();
+    title_header.click().await.unwrap();
 
     tokio::time::sleep(Duration::from_millis(300)).await;
 
     let rows = session
         .driver
-        .find_all(By::Css("#author-list tbody tr"))
+        .find_all(By::Css("#user-book-list tbody tr"))
         .await
         .unwrap();
     let mut second_order = Vec::new();

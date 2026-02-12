@@ -32,6 +32,16 @@ async fn create_reading_with_api_prerequisites() {
         .await
         .unwrap();
 
+    // Select status "reading" to reveal the format field (hidden when "on_shelf")
+    select_option(&session.driver, "status", "reading")
+        .await
+        .unwrap();
+
+    // Wait for Datastar to show the format field
+    wait_for_visible(&session.driver, "select[name='format']")
+        .await
+        .unwrap();
+
     // Select the reading format
     select_option(&session.driver, "format", "physical")
         .await

@@ -246,6 +246,34 @@ pub async fn create_genre_with_name(app: &TestApp, name: &str) -> booklog::domai
     .await
 }
 
+pub async fn create_book_with_title(
+    app: &TestApp,
+    author_id: booklog::domain::ids::AuthorId,
+    title: &str,
+) -> booklog::domain::book_items::Book {
+    create_entity(
+        app,
+        "/books",
+        &booklog::domain::book_items::NewBook {
+            title: title.to_string(),
+            authors: vec![booklog::domain::book_items::BookAuthor {
+                author_id,
+                role: booklog::domain::book_items::AuthorRole::default(),
+            }],
+            isbn: None,
+            description: None,
+            page_count: None,
+            year_published: None,
+            publisher: None,
+            language: None,
+            primary_genre_id: None,
+            secondary_genre_id: None,
+            created_at: None,
+        },
+    )
+    .await
+}
+
 pub async fn create_default_book(
     app: &TestApp,
     author_id: booklog::domain::ids::AuthorId,
@@ -293,6 +321,14 @@ pub async fn create_default_reading(
         },
     )
     .await
+}
+
+/// Create a complete library item: author → book → reading (auto-creates UserBook).
+/// Returns the book title for verification in list views.
+pub async fn create_library_item(app: &TestApp, title: &str) -> booklog::domain::readings::Reading {
+    let author = create_author_with_name(app, &format!("{title} Author")).await;
+    let book = create_book_with_title(app, author.id, title).await;
+    create_default_reading(app, book.id).await
 }
 
 /// Asserts that the response has valid Datastar fragment headers

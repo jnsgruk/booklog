@@ -38,16 +38,6 @@ async fn create_author_via_add_page() {
     let heading_text = heading.text().await.unwrap();
     assert_eq!(heading_text, "E2E Test Author");
 
-    // Navigate to the data page and verify the author appears in the list
-    session.goto("/data?type=authors").await.unwrap();
-
-    let body = session.driver.find(By::Css("body")).await.unwrap();
-    let body_text = body.text().await.unwrap();
-    assert!(
-        body_text.contains("E2E Test Author"),
-        "Author should appear in the data list"
-    );
-
     session.quit().await;
 }
 
