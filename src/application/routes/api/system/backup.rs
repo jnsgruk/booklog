@@ -1,0 +1,85 @@
+use axum::Json;
+use axum::extract::State;
+use axum::http::{StatusCode, header};
+use axum::response::{IntoResponse, Response};
+
+use crate::application::auth::AuthenticatedUser;
+use crate::application::errors::{ApiError, AppError};
+use crate::application::state::AppState;
+use crate::infrastructure::backup::BackupData;
+
+/// GET /api/v1/backup — export all data as JSON (requires admin)
+///
+/// Returns the backup with a `Content-Disposition: attachment` header so
+/// browsers trigger a file download while API/CLI consumers can ignore it.
+pub(crate) async fn export_backup(
+    State(state): State<AppState>,
+    auth_user: AuthenticatedUser,
+) -> Result<Response, ApiError> {
+    if !auth_user.real.is_admin {
+        return Ok(StatusCode::FORBIDDEN.into_response());
+    }
+    let data = state
+        .backup_service
+        .export()
+        .await
+        .map_err(|e| AppError::unexpected(e.to_string()))?;
+
+    let body = serde_json::to_string(&data).map_err(|e| AppError::unexpected(e.to_string()))?;
+
+    let filename = format!(
+        "booklog-backup-{}.json",
+        chrono::Utc::now().format("%Y-%m-%d")
+    );
+
+    Ok((
+        [
+            (header::CONTENT_TYPE, "application/json".to_string()),
+            (
+                header::CONTENT_DISPOSITION,
+                format!("attachment; filename=\"{filename}\""),
+            ),
+        ],
+        body,
+    )
+        .into_response())
+}
+
+/// POST /api/v1/backup/restore — restore from JSON backup (requires admin)
+pub(crate) async fn restore_backup(
+    State(state): State<AppState>,
+    auth_user: AuthenticatedUser,
+    Json(payload): Json<BackupData>,
+) -> Result<Response, ApiError> {
+    if !auth_user.real.is_admin {
+        return Ok(StatusCode::FORBIDDEN.into_response());
+    }
+    state.backup_service.restore(payload).await.map_err(|e| {
+        let msg = e.to_string();
+        if msg.contains("not empty") {
+            ApiError::from(AppError::Conflict(msg))
+        } else {
+            ApiError::from(AppError::unexpected(msg))
+        }
+    })?;
+    Ok(StatusCode::NO_CONTENT.into_response())
+}
+
+/// POST /api/v1/backup/reset — delete all data (requires admin)
+pub(crate) async fn reset_database(
+    State(state): State<AppState>,
+    auth_user: AuthenticatedUser,
+) -> Result<Response, ApiError> {
+    if !auth_user.real.is_admin {
+        return Ok(StatusCode::FORBIDDEN.into_response());
+    }
+    state
+        .backup_service
+        .reset()
+        .await
+        .map_err(|e| AppError::unexpected(e.to_string()))?;
+
+    tracing::info!("database reset: all coffee data deleted");
+
+    Ok(StatusCode::NO_CONTENT.into_response())
+}
