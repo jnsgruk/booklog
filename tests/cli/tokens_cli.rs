@@ -1,0 +1,105 @@
+use crate::helpers::{create_token, run_booklog};
+use crate::test_macros::define_cli_auth_test;
+
+define_cli_auth_test!(test_list_tokens_requires_authentication, &["token", "list"]);
+define_cli_auth_test!(
+    test_revoke_token_requires_authentication,
+    &["token", "revoke", "--id", "1"]
+);
+
+#[test]
+fn test_list_tokens_with_authentication() {
+    let token = create_token("test-list-tokens");
+
+    let output = run_booklog(&["token", "list"], &[("BOOKLOG_TOKEN", &token)]);
+
+    assert!(
+        output.status.success(),
+        "token list with auth should succeed"
+    );
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains("test-list-tokens"),
+        "Should list the created token"
+    );
+}
+
+#[test]
+fn test_revoke_token_with_authentication() {
+    let token = create_token("test-revoke-token");
+
+    let list_output = run_booklog(&["token", "list"], &[("BOOKLOG_TOKEN", &token)]);
+    assert!(list_output.status.success());
+
+    let list_stdout = String::from_utf8_lossy(&list_output.stdout);
+    let tokens: serde_json::Value =
+        serde_json::from_str(&list_stdout).expect("Should parse token list as JSON");
+
+    let tokens_array = tokens.as_array().expect("Should be an array");
+    let token_to_revoke = tokens_array
+        .iter()
+        .find(|t| t["name"].as_str() == Some("test-revoke-token"))
+        .expect("Should find token to revoke");
+
+    let token_id = token_to_revoke["id"]
+        .as_i64()
+        .expect("Token should have ID");
+
+    let revoke_output = run_booklog(
+        &["token", "revoke", "--id", &token_id.to_string()],
+        &[("BOOKLOG_TOKEN", &token)],
+    );
+
+    assert!(
+        revoke_output.status.success(),
+        "Should be able to revoke token"
+    );
+}
+
+#[test]
+fn test_revoked_token_cannot_be_used() {
+    let token_to_revoke = create_token("test-revoked-token");
+    let admin_token = create_token("test-admin-token");
+
+    let list_output = run_booklog(&["token", "list"], &[("BOOKLOG_TOKEN", &admin_token)]);
+    assert!(list_output.status.success());
+
+    let list_stdout = String::from_utf8_lossy(&list_output.stdout);
+    let tokens: serde_json::Value =
+        serde_json::from_str(&list_stdout).expect("Should parse token list as JSON");
+
+    let tokens_array = tokens.as_array().expect("Should be an array");
+    let token_to_revoke_entry = tokens_array
+        .iter()
+        .find(|t| t["name"].as_str() == Some("test-revoked-token"))
+        .expect("Should find token to revoke");
+
+    let token_id = token_to_revoke_entry["id"]
+        .as_i64()
+        .expect("Token should have ID");
+
+    let revoke_output = run_booklog(
+        &["token", "revoke", "--id", &token_id.to_string()],
+        &[("BOOKLOG_TOKEN", &admin_token)],
+    );
+    assert!(
+        revoke_output.status.success(),
+        "Should successfully revoke token"
+    );
+
+    let list_with_revoked_output =
+        run_booklog(&["token", "list"], &[("BOOKLOG_TOKEN", &token_to_revoke)]);
+
+    assert!(
+        !list_with_revoked_output.status.success(),
+        "Revoked token should not be able to authenticate"
+    );
+
+    let stderr = String::from_utf8_lossy(&list_with_revoked_output.stderr);
+    assert!(
+        stderr.contains("401") || stderr.contains("Unauthorized") || stderr.contains("failed"),
+        "Error should indicate authentication failure, got: {}",
+        stderr
+    );
+}
