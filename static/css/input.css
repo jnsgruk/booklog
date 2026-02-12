@@ -1,0 +1,986 @@
+@import "tailwindcss";
+@source "../../templates/";
+@source "../../static/js/";
+
+/* ── Dark mode variant (selector-based) ────────────────────────── */
+
+@custom-variant dark (&:where([data-theme="dark"] *));
+
+/* ── Design tokens ─────────────────────────────────────────────── */
+
+:root {
+  color-scheme: light;
+
+  /* Surfaces */
+  --page: #fafaf9; /* stone-50  */
+  --surface: #ffffff; /* white     */
+  --surface-alt: #f5f5f4; /* stone-100 */
+
+  /* Borders */
+  --border: #e7e5e4; /* stone-200 */
+  --border-muted: #f5f5f4; /* stone-100 */
+
+  /* Accent */
+  --accent: #2563eb; /* blue-600 */
+  --accent-hover: #3b82f6; /* blue-500 */
+  --accent-subtle: #eff6ff; /* blue-50  */
+  --accent-text: #ffffff;
+
+  /* Text */
+  --text: #1c1917; /* stone-900 */
+  --text-secondary: #57534e; /* stone-600 */
+  --text-muted: #78716c; /* stone-500 */
+
+  /* Data-viz highlight (RGB triplet for alpha usage in JS) */
+  --highlight-rgb: 37, 99, 235; /* blue-600, matches --accent */
+
+  /* Feedback */
+  --error: #dc2626; /* red-600 */
+  --error-bg: #fef2f2; /* red-50 */
+  --error-border: rgba(220, 38, 38, 0.3);
+  --error-text: #991b1b; /* red-800 */
+  --success: #059669; /* green-600 */
+  --success-bg: #ecfdf5; /* green-50 */
+  --success-border: rgba(5, 150, 105, 0.3);
+  --success-text: #065f46; /* green-800 */
+  --warning-bg: #fffbeb; /* amber-50 */
+  --warning-border: rgba(217, 119, 6, 0.4);
+  --warning-text: #92400e; /* amber-800 */
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --page: #1c1917;
+  --surface: #292524;
+  --surface-alt: #44403c;
+
+  --border: #57534e;
+  --border-muted: #44403c;
+
+  --accent: #60a5fa; /* blue-400 */
+  --accent-hover: #93c5fd; /* blue-300 */
+  --accent-subtle: rgba(96, 165, 250, 0.1);
+  --accent-text: #1e293b; /* slate-800 — dark text on light blue */
+
+  --text: #e7e5e4;
+  --text-secondary: #d6d3d1;
+  --text-muted: #a8a29e;
+
+  --highlight-rgb: 96, 165, 250; /* blue-400, matches --accent */
+
+  --error: #ef4444;
+  --error-bg: rgba(220, 38, 38, 0.1);
+  --error-border: rgba(220, 38, 38, 0.4);
+  --error-text: #fca5a5;
+  --success: #34d399;
+  --success-bg: rgba(5, 150, 105, 0.1);
+  --success-border: rgba(5, 150, 105, 0.4);
+  --success-text: #6ee7b7;
+  --warning-bg: rgba(217, 119, 6, 0.1);
+  --warning-border: rgba(217, 119, 6, 0.4);
+  --warning-text: #fbbf24; /* amber-400 */
+}
+
+/* ── Theme: map raw vars to Tailwind utilities ─────────────────── */
+
+@theme {
+  --color-page: var(--page);
+  --color-surface: var(--surface);
+  --color-surface-alt: var(--surface-alt);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-subtle: var(--accent-subtle);
+  --color-accent-text: var(--accent-text);
+  --color-text: var(--text);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-border: var(--border);
+  --color-highlight: rgb(var(--highlight-rgb));
+  --color-error: var(--error);
+  --color-error-bg: var(--error-bg);
+  --color-error-border: var(--error-border);
+  --color-error-text: var(--error-text);
+  --color-success: var(--success);
+  --color-success-bg: var(--success-bg);
+  --color-success-border: var(--success-border);
+  --color-success-text: var(--success-text);
+  --color-warning-bg: var(--warning-bg);
+  --color-warning-border: var(--warning-border);
+  --color-warning-text: var(--warning-text);
+}
+
+/* ── Base: default border color ────────────────────────────────── */
+
+@layer base {
+  *,
+  ::after,
+  ::before {
+    border-color: var(--border);
+  }
+}
+
+/* ── Typography ────────────────────────────────────────────────── */
+
+body {
+  font-family:
+    "Inter",
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
+
+a {
+  text-decoration: none;
+}
+
+/* ── Utilities ────────────────────────────────────────────────── */
+
+@utility scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@utility text-2xs {
+  font-size: 0.65rem;
+  line-height: 1rem;
+}
+
+@utility small-caps {
+  font-variant: small-caps;
+}
+
+/* ── Form controls ─────────────────────────────────────────────── */
+
+.input-field {
+  width: 100%;
+  min-width: 0;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  background-color: var(--surface);
+  padding: 0.6rem 0.75rem;
+  font-family: inherit;
+  font-size: 0.875rem;
+  color: var(--text);
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+input.input-field[type="number"]::-webkit-inner-spin-button,
+input.input-field[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input.input-field[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+@media (max-width: 767px) {
+  .input-field {
+    font-size: 1rem; /* 16px — prevents iOS Safari auto-zoom on focus */
+  }
+}
+
+.btn-adjust {
+  display: flex;
+  height: 2rem;
+  width: 2rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.375rem;
+  border: 1px solid var(--border);
+  background-color: var(--surface);
+  color: var(--accent);
+  font-weight: 700;
+  touch-action: manipulation;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
+}
+
+.btn-adjust:hover {
+  background-color: var(--surface-alt);
+  color: var(--accent-hover);
+}
+
+@media (max-width: 767px) {
+  .btn-adjust {
+    height: 2.75rem;
+    width: 2.75rem;
+  }
+}
+
+/* ── Toggle switch ───────────────────────────────────────────── */
+
+.toggle-track {
+  position: relative;
+  height: 1.75rem;
+  width: 3rem;
+  flex-shrink: 0;
+  border-radius: 9999px;
+  background-color: #d6d3d1; /* stone-300 */
+  transition: background-color 200ms ease;
+}
+
+[data-theme="dark"] .toggle-track {
+  background-color: #57534e; /* stone-600 */
+}
+
+.toggle-track::after {
+  content: "";
+  position: absolute;
+  left: 0.25rem;
+  top: 0.25rem;
+  height: 1.25rem;
+  width: 1.25rem;
+  border-radius: 9999px;
+  background-color: white;
+  box-shadow:
+    0 1px 3px 0 rgba(0, 0, 0, 0.1),
+    0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  transition: transform 200ms ease;
+}
+
+.peer:checked ~ .toggle-track {
+  background-color: var(--accent);
+}
+
+.peer:checked ~ .toggle-track::after {
+  transform: translateX(1.25rem);
+}
+
+.peer:focus-visible ~ .toggle-track {
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.5);
+}
+
+/* ── Searchable-select keyboard highlight ─────────────────────── */
+
+.ss-active {
+  background-color: var(--accent-subtle);
+}
+
+/* ── Mobile fixed nav ─────────────────────────────────────────── */
+
+/* ── Impersonation banner (mobile) ────────────────────────────── */
+
+@media (max-width: 767px) {
+  .impersonation-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+}
+
+/* ── Mobile fixed nav ─────────────────────────────────────────── */
+
+@media (max-width: 767px) {
+  :root {
+    --fixed-nav-h: calc(
+      max(1rem, env(safe-area-inset-top, 0px) * 0.9) + 3.25rem
+    );
+    --impersonation-h: calc(env(safe-area-inset-top, 0px) + 2.25rem);
+  }
+
+  .nav-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 30;
+    background-color: var(--page);
+    padding-top: max(1rem, calc(env(safe-area-inset-top, 0px) * 0.9));
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+
+  body:has(.impersonation-banner) .nav-bar {
+    top: var(--impersonation-h);
+  }
+
+  main {
+    padding-top: calc(var(--fixed-nav-h) + 2rem);
+  }
+
+  body:has(.impersonation-banner) main {
+    padding-top: calc(var(--impersonation-h) + var(--fixed-nav-h) + 2rem);
+  }
+}
+
+/* ── Sticky Submit ────────────────────────────────────────────── */
+
+.sticky-submit {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  padding: 0.75rem 1.5rem;
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  background-color: var(--surface);
+  border-top: 1px solid var(--border);
+}
+
+@media (min-width: 768px) {
+  .sticky-submit {
+    position: static;
+    padding: 0;
+    background-color: transparent;
+    border-top: none;
+  }
+}
+
+/* ── Pills ─────────────────────────────────────────────────────── */
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  padding: 0.125rem 0.625rem;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.pill-muted {
+  border-color: var(--border);
+  color: var(--text-secondary);
+  background-color: var(--surface-alt);
+}
+
+.pill-warning {
+  border-color: rgba(217, 119, 6, 0.4);
+  color: #92400e;
+  background-color: #fffbeb;
+}
+
+[data-theme="dark"] .pill-warning {
+  color: #fbbf24;
+  background-color: rgba(217, 119, 6, 0.1);
+}
+
+.pill-success {
+  border-color: rgba(5, 150, 105, 0.4);
+  color: #065f46;
+  background-color: #ecfdf5;
+}
+
+[data-theme="dark"] .pill-success {
+  color: #34d399;
+  background-color: rgba(5, 150, 105, 0.1);
+}
+
+.pill-info {
+  border-color: rgba(59, 130, 246, 0.4);
+  color: #1e40af;
+  background-color: #eff6ff;
+}
+
+[data-theme="dark"] .pill-info {
+  color: #60a5fa;
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+/* Tasting-note colour categories (SCA wheel) */
+
+.pill-floral {
+  border-color: rgba(236, 72, 153, 0.3);
+  color: #9d174d;
+  background-color: #fdf2f8;
+}
+
+.pill-fruity {
+  border-color: rgba(220, 38, 38, 0.3);
+  color: #991b1b;
+  background-color: #fef2f2;
+}
+
+.pill-citrus {
+  border-color: rgba(245, 158, 11, 0.3);
+  color: #92400e;
+  background-color: #fffbeb;
+}
+
+.pill-sweet {
+  border-color: rgba(234, 88, 12, 0.3);
+  color: #9a3412;
+  background-color: #fff7ed;
+}
+
+.pill-nutty {
+  border-color: rgba(161, 98, 7, 0.3);
+  color: #713f12;
+  background-color: #fefce8;
+}
+
+.pill-spice {
+  border-color: rgba(190, 18, 60, 0.3);
+  color: #9f1239;
+  background-color: #fff1f2;
+}
+
+.pill-roasted {
+  border-color: rgba(120, 113, 108, 0.3);
+  color: #44403c;
+  background-color: #f5f5f4;
+}
+
+.pill-sour {
+  border-color: rgba(101, 163, 13, 0.3);
+  color: #3f6212;
+  background-color: #f7fee7;
+}
+
+.pill-vegetal {
+  border-color: rgba(5, 150, 105, 0.3);
+  color: #065f46;
+  background-color: #ecfdf5;
+}
+
+[data-theme="dark"] .pill-floral {
+  color: #f9a8d4;
+  background-color: rgba(236, 72, 153, 0.1);
+}
+
+[data-theme="dark"] .pill-fruity {
+  color: #fca5a5;
+  background-color: rgba(220, 38, 38, 0.1);
+}
+
+[data-theme="dark"] .pill-citrus {
+  color: #fcd34d;
+  background-color: rgba(245, 158, 11, 0.1);
+}
+
+[data-theme="dark"] .pill-sweet {
+  color: #fdba74;
+  background-color: rgba(234, 88, 12, 0.1);
+}
+
+[data-theme="dark"] .pill-nutty {
+  color: #fde68a;
+  background-color: rgba(161, 98, 7, 0.1);
+}
+
+[data-theme="dark"] .pill-spice {
+  color: #fda4af;
+  background-color: rgba(190, 18, 60, 0.1);
+}
+
+[data-theme="dark"] .pill-roasted {
+  color: #a8a29e;
+  background-color: rgba(120, 113, 108, 0.1);
+}
+
+[data-theme="dark"] .pill-sour {
+  color: #bef264;
+  background-color: rgba(101, 163, 13, 0.1);
+}
+
+[data-theme="dark"] .pill-vegetal {
+  color: #6ee7b7;
+  background-color: rgba(5, 150, 105, 0.1);
+}
+
+/* ── Tabs ──────────────────────────────────────────────────────── */
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  flex: 1;
+  border-radius: 0.375rem;
+  padding: 0.375rem 0.875rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background-color: var(--surface);
+  transition:
+    background-color 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease;
+  color: var(--accent);
+}
+
+.tab:not(.tab-active):hover {
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+.tab-active {
+  border-color: var(--accent);
+}
+
+.tab-mobile {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: var(--accent);
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
+  color: var(--text-secondary);
+}
+
+.tab-mobile:not(.tab-mobile-active):hover {
+  background-color: var(--surface-alt);
+}
+
+.tab-mobile-active {
+  background-color: var(--accent-subtle);
+}
+
+/* ── Timeline layout ───────────────────────────────────────────── */
+
+/* Mobile: single column, centred line behind cards */
+.timeline-line {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.timeline-item {
+  padding-left: 0;
+}
+
+.timeline-node {
+  left: 50%;
+  top: -10px;
+  transform: translateX(-50%);
+  z-index: 2;
+}
+
+.timeline-heading {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: var(--page);
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid transparent;
+  transition: border-color 0.15s ease;
+  text-align: center;
+}
+
+.timeline-heading.is-stuck {
+  border-bottom-color: var(--accent);
+}
+
+.timeline-top-btn {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 0.25rem;
+  color: var(--text-secondary);
+  opacity: 0.7;
+  transition: opacity 0.15s ease;
+}
+
+.timeline-top-btn:hover {
+  opacity: 1;
+}
+
+.timeline-heading.is-stuck .timeline-top-btn {
+  display: block;
+}
+
+/* ── Timeline card expand/collapse ────────────────────────────── */
+/* Cards start collapsed; data-show toggles condensed vs detail content */
+
+.tl-card {
+  cursor: pointer;
+}
+
+@media (max-width: 767px) {
+  /* Tighter spacing for condensed cards on mobile */
+  .timeline-item {
+    margin-bottom: 1rem;
+  }
+
+  /* Stick below fixed nav; 0.5rem tucks behind nav, 1rem visible = matches bottom */
+  .timeline-heading {
+    top: calc(var(--fixed-nav-h) - 0.5rem);
+    padding-top: 1.5rem;
+  }
+}
+
+/* ── Data page ─────────────────────────────────────────────────── */
+
+/* Hide duplicate search inside data page - search is in the tab bar */
+.data-page-content
+  section:has(.responsive-table)
+  > div:first-child:has(input[type="search"]) {
+  display: none;
+}
+
+/* Remove extra margin from list containers inside data page */
+.data-page-content > div[id$="-list"] {
+  margin-top: 0;
+}
+
+/* ── Responsive tables: convert rows to cards on mobile ────────── */
+
+@media (max-width: 767px) {
+  /* Remove outer section border/background on mobile - cards are standalone */
+  section:has(.responsive-table) {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+
+  /* Search header: remove wrapper styling, let input fill width */
+  section:has(.responsive-table) > div:first-child:has(input[type="search"]) {
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin-bottom: 1rem;
+  }
+
+  /* Remove overflow wrapper styling */
+  section:has(.responsive-table) > .overflow-x-auto {
+    overflow: visible;
+  }
+
+  .responsive-table {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  /* Remove divide-y borders from table */
+  .responsive-table,
+  .responsive-table tbody {
+    border-color: transparent !important;
+  }
+
+  .responsive-table thead {
+    display: none;
+  }
+
+  .responsive-table tbody {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 0;
+  }
+
+  /* Mobile card style */
+  .responsive-table tr {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border) !important;
+    background-color: var(--surface);
+    box-shadow: none;
+  }
+
+  .responsive-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 0.25rem 0;
+    white-space: normal;
+    font-size: 0.875rem;
+    text-align: end;
+    border: none !important;
+  }
+
+  .responsive-table td::before {
+    content: attr(data-label);
+    flex-shrink: 0;
+    min-width: 5.5rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-right: 0.75rem;
+    text-align: start;
+  }
+
+  .responsive-table td[data-label=""]::before {
+    display: none;
+  }
+
+  .responsive-table td.mobile-hidden {
+    display: none;
+  }
+
+  /* Card title: header section with bottom divider */
+  .responsive-table td.card-title {
+    order: -2;
+    padding: 0 0 0.5rem 0;
+    padding-right: 2.5rem;
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-muted) !important;
+  }
+
+  .responsive-table td.card-title,
+  .responsive-table td.card-title > :first-child {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .responsive-table td.card-title::before {
+    display: none;
+  }
+
+  /* "Added" date: footer section with top divider */
+  .responsive-table td.card-date {
+    order: 99;
+    margin: 0.5rem -1rem -1rem !important;
+    padding: 0.75rem 1rem !important;
+    border-top: 1px solid var(--border-muted) !important;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+  }
+
+  .responsive-table td.card-date::before {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    min-width: auto;
+    margin-right: 0.5rem;
+  }
+
+  /* Tasting notes: bottom strip, no label, left-aligned pills */
+  .responsive-table td.card-notes {
+    order: 98;
+    display: flex;
+    justify-content: flex-start;
+    text-align: start;
+    padding-top: 0.5rem !important;
+  }
+
+  .responsive-table td.card-notes::before {
+    display: none;
+  }
+
+  /* Actions: absolute top-right in header area */
+  .responsive-table td.card-actions {
+    order: -1;
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    padding: 0;
+    justify-content: flex-end;
+  }
+
+  .responsive-table td.card-actions::before {
+    display: none;
+  }
+
+  /* Hide detail row on mobile — inline card-detail is used instead */
+  .responsive-table .detail-row {
+    display: none !important;
+  }
+
+  /* Inline detail content within cards */
+  .responsive-table .card-detail {
+    order: -1;
+    margin: 0 -1rem 0.25rem !important;
+    padding: 0.5rem 1rem !important;
+    border-bottom: 1px solid var(--border-muted) !important;
+    background-color: var(--surface-alt);
+    justify-content: center;
+  }
+
+  .responsive-table .card-detail.hidden {
+    display: none !important;
+  }
+
+  .responsive-table .card-detail::before {
+    display: none;
+  }
+
+  /* Progress bar: full-width above footer */
+  .responsive-table td.card-progress {
+    order: 98;
+    display: block;
+    margin: 0.25rem 0 0 !important;
+    padding: 0 !important;
+  }
+
+  .responsive-table td.card-progress::before {
+    display: none;
+  }
+
+  .pagination-controls {
+    display: none;
+  }
+}
+
+/* ── Desktop timeline ──────────────────────────────────────────── */
+
+@media (min-width: 768px) {
+  /* Hide inline card-detail on desktop — detail row is used instead */
+  .responsive-table .card-detail {
+    display: none !important;
+  }
+
+  .timeline-list {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .timeline-item {
+    width: 50%;
+    padding-right: 0;
+  }
+
+  /* Reset node to side-of-card positioning on desktop */
+  .timeline-node {
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  /* Left side items (odd) - counts only .timeline-item children, skipping month headings */
+  .timeline-item:nth-child(odd of .timeline-item) {
+    align-self: flex-start;
+    padding-right: 2rem;
+  }
+
+  .timeline-item:nth-child(odd of .timeline-item) .timeline-node {
+    right: -10px;
+    left: auto;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  /* Right side items (even) */
+  .timeline-item:nth-child(even of .timeline-item) {
+    align-self: flex-end;
+    padding-left: 2rem;
+  }
+
+  .timeline-item:nth-child(even of .timeline-item) .timeline-node {
+    left: -10px;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  /* Allow vertical overlap between alternating cards (skip first item) */
+  .timeline-item + .timeline-item {
+    margin-top: -4rem;
+  }
+
+  /* ── Spacious flat tables ─────────────────────────────────────── */
+
+  /* Strip card wrapper */
+  section:has(.responsive-table) {
+    border: none;
+    border-radius: 0;
+    background-color: transparent;
+  }
+
+  /* Search header: remove border, tighten spacing */
+  section:has(.responsive-table) > div:first-child:has(input[type="search"]) {
+    border-bottom: none;
+    padding-top: 0;
+    padding-bottom: 0.75rem;
+  }
+
+  /* Flat thead: typography-only distinction */
+  .responsive-table thead {
+    background-color: transparent;
+  }
+
+  /* Remove thead/tbody divider from divide-y on <table> */
+  .responsive-table {
+    border-color: transparent;
+  }
+
+  /* Spacious cells */
+  .responsive-table th,
+  .responsive-table td {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+
+  /* Row background: lift rows off the page */
+  .responsive-table tbody > tr {
+    background-color: var(--surface);
+    border-color: var(--border);
+    border-top-width: 1px;
+  }
+
+  .responsive-table tbody > tr:last-child {
+    border-bottom-width: 1px;
+  }
+
+  /* Hide Actions column on desktop — whole row is clickable */
+  .responsive-table .actions-col,
+  .responsive-table td.card-actions {
+    display: none;
+  }
+
+  /* Pointer cursor on clickable rows */
+  .responsive-table tbody > tr[onclick] {
+    cursor: pointer;
+  }
+
+  /* Hover: accent tint + left bar */
+  .responsive-table tbody > tr:not(.detail-row):hover {
+    background-color: var(--accent-subtle);
+    box-shadow: inset 3px 0 0 var(--accent);
+  }
+
+  /* Expanded row: persistent accent highlight */
+  .responsive-table tbody > tr.expanded {
+    background-color: var(--accent-subtle);
+    box-shadow: inset 3px 0 0 var(--accent);
+  }
+
+  /* Expanded row: remove bottom border so detail row merges */
+  .responsive-table tbody > tr.expanded {
+    border-bottom-width: 0;
+  }
+
+  /* Detail row: light grey bg + left accent bar, no top border */
+  .responsive-table tbody > tr.expanded + tr.detail-row {
+    background-color: var(--surface-alt);
+    box-shadow: inset 3px 0 0 var(--accent);
+    border-top-width: 0;
+  }
+
+  /* Detail row: keep compact */
+  .responsive-table .detail-row td {
+    background-color: transparent;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+
+  /* Pagination floats below as footer */
+  section:has(.responsive-table) .pagination-controls {
+    border-top: none;
+    padding-top: 0.75rem;
+    padding-bottom: 0;
+  }
+}
