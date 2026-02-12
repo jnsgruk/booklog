@@ -6,10 +6,10 @@ primary_region = 'lhr'
 [build]
 
 [env]
-BREWLOG_OPENROUTER_MODEL = 'google/gemini-3-flash-preview'
-BREWLOG_RP_ID = 'books.jnsgr.uk'
-BREWLOG_BIND_ADDRESS = '0.0.0.0:3000'
-BREWLOG_RP_ORIGIN = 'https://books.jnsgr.uk'
+BOOKLOG_OPENROUTER_MODEL = 'google/gemini-3-flash-preview'
+BOOKLOG_RP_ID = 'books.jnsgr.uk'
+BOOKLOG_BIND_ADDRESS = '0.0.0.0:3000'
+BOOKLOG_RP_ORIGIN = 'https://books.jnsgr.uk'
 RUST_LOG_FORMAT = 'json'
 
 [http_service]
