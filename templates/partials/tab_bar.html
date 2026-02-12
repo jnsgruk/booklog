@@ -1,0 +1,70 @@
+{% import "partials/icons.html" as icons %}
+
+<div
+  data-signals:{{ tab_signal }}="'{{ active_type }}'"
+  data-signals:_tabs-open="false"
+>
+  <!-- Desktop tabs -->
+  <nav class="hidden md:flex gap-1.5" role="tablist">
+    {% for tab in tabs %}
+      <button
+        type="button"
+        role="tab"
+        class="tab"
+        data-class:tab-active="{{ tab_signal_js }} === '{{ tab.key }}'"
+        data-on:click="{{ tab_signal_js }} = '{{ tab.key }}'{% if !tab_base_url.is_empty() %}
+          ; history.pushState(null, '', '{{ tab_base_url }}{{ tab.key }}');
+          @get('{{ tab_base_url }}{{ tab.key }}', {responseOverrides: {selector:
+          '{{ tab_fetch_target }}', mode: '{{ tab_fetch_mode }}'}})
+        {% endif %}"
+      >
+        {% if tab.key == "author" || tab.key == "authors" %}{{ icons::pen("h-4 w-4 shrink-0") }}{% elif tab.key == "book" || tab.key == "books" %}{{ icons::book("h-4 w-4 shrink-0") }}{% elif tab.key == "reading" || tab.key == "readings" || tab.key == "library" %}{{ icons::bookmark("h-4 w-4 shrink-0") }}{% elif tab.key == "genre" || tab.key == "genres" %}{{ icons::tag("h-4 w-4 shrink-0") }}{% elif tab.key == "wishlist" %}{{ icons::heart("h-4 w-4 shrink-0") }}{% endif %}
+        {{ tab.label }}
+      </button>
+    {% endfor %}
+  </nav>
+  <!-- Mobile tab selector -->
+  <div class="md:hidden">
+    <button
+      type="button"
+      class="flex w-full items-center justify-between rounded-md border border-accent p-3 text-sm font-medium text-accent"
+      data-on:click="$_tabsOpen = !$_tabsOpen"
+    >
+      <span>
+        {% for tab in tabs %}
+          <span
+            data-show="{{ tab_signal_js }} === '{{ tab.key }}'"
+            class="inline-flex items-center gap-1.5"
+            >{% if tab.key == "author" || tab.key == "authors" %}{{ icons::pen("h-4 w-4 shrink-0") }}{% elif tab.key == "book" || tab.key == "books" %}{{ icons::book("h-4 w-4 shrink-0") }}{% elif tab.key == "reading" || tab.key == "readings" || tab.key == "library" %}{{ icons::bookmark("h-4 w-4 shrink-0") }}{% elif tab.key == "genre" || tab.key == "genres" %}{{ icons::tag("h-4 w-4 shrink-0") }}{% elif tab.key == "wishlist" %}{{ icons::heart("h-4 w-4 shrink-0") }}{% endif %}
+            {{ tab.label }}</span
+          >
+        {% endfor %}
+      </span>
+      <span data-show="!$_tabsOpen">{{ icons::chevron_down("h-5 w-5") }}</span>
+      <span data-show="$_tabsOpen" style="display:none"
+        >{{ icons::chevron_up("h-5 w-5") }}</span
+      >
+    </button>
+    <div
+      class="mt-1 flex flex-col rounded-md border overflow-hidden"
+      data-show="$_tabsOpen"
+      style="display:none"
+    >
+      {% for tab in tabs %}
+        <button
+          type="button"
+          class="tab-mobile"
+          data-class:tab-mobile-active="{{ tab_signal_js }} === '{{ tab.key }}'"
+          data-on:click="{{ tab_signal_js }} = '{{ tab.key }}'; $_tabsOpen = false{% if !tab_base_url.is_empty() %}
+            ; history.pushState(null, '', '{{ tab_base_url }}{{ tab.key }}');
+            @get('{{ tab_base_url }}{{ tab.key }}', {responseOverrides:
+            {selector: '{{ tab_fetch_target }}', mode: '{{ tab_fetch_mode }}'}})
+          {% endif %}"
+        >
+          {% if tab.key == "author" || tab.key == "authors" %}{{ icons::pen("h-4 w-4 shrink-0") }}{% elif tab.key == "book" || tab.key == "books" %}{{ icons::book("h-4 w-4 shrink-0") }}{% elif tab.key == "reading" || tab.key == "readings" || tab.key == "library" %}{{ icons::bookmark("h-4 w-4 shrink-0") }}{% elif tab.key == "genre" || tab.key == "genres" %}{{ icons::tag("h-4 w-4 shrink-0") }}{% elif tab.key == "wishlist" %}{{ icons::heart("h-4 w-4 shrink-0") }}{% endif %}
+          {{ tab.label }}
+        </button>
+      {% endfor %}
+    </div>
+  </div>
+</div>

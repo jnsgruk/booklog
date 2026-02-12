@@ -1,0 +1,160 @@
+{% import "partials/icons.html" as icons %}
+
+{% macro share_button() %}
+  <button
+    onclick="shareLink(this)"
+    class="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm font-medium text-text-muted transition hover:bg-surface-alt hover:text-text shrink-0"
+  >
+    <span class="share-icon">{{ icons::clipboard("h-4 w-4 shrink-0") }}</span>
+    <span class="share-icon-check hidden"
+      >{{ icons::check("h-4 w-4 shrink-0") }}</span
+    >
+    <span class="share-label">Share</span>
+  </button>
+{% endmacro %}
+
+{% macro share_script() %}
+  <script>
+    const shareLink = (btn) => {
+      navigator.clipboard.writeText(window.location.href).then(() => {
+        btn.querySelector(".share-icon").classList.add("hidden");
+        btn.querySelector(".share-icon-check").classList.remove("hidden");
+        btn.querySelector(".share-label").textContent = "Copied";
+        setTimeout(() => {
+          btn.querySelector(".share-icon").classList.remove("hidden");
+          btn.querySelector(".share-icon-check").classList.add("hidden");
+          btn.querySelector(".share-label").textContent = "Share";
+        }, 2000);
+      });
+    };
+  </script>
+{% endmacro %}
+
+{% macro edit_button(edit_url) %}
+  <a
+    href="{{ edit_url }}"
+    class="inline-flex items-center gap-2 rounded-md border px-4 py-2 text-sm font-medium text-accent transition hover:bg-surface-alt"
+  >
+    {{ icons::pencil("h-4 w-4") }} Edit
+  </a>
+{% endmacro %}
+
+{% macro delete_button(entity_label, api_path, id) %}
+  <div class="rounded-lg border bg-surface p-5 flex items-center gap-2">
+    <button
+      type="button"
+      class="inline-flex items-center gap-2 rounded-md border px-4 py-2 text-sm font-medium text-error transition hover:bg-surface-alt"
+      data-on:click="confirm('Delete this {{ entity_label }}? This cannot be undone.') && @delete('{{ api_path }}/{{ id }}')"
+    >
+      {{ icons::delete("h-4 w-4") }} Delete
+    </button>
+  </div>
+{% endmacro %}
+
+{% macro star_rating() %}
+  <div class="flex flex-col gap-1 text-sm">
+    <span class="text-xs font-semibold text-text-muted uppercase tracking-wide"
+      >Rating</span
+    >
+    <div class="flex gap-0.5 py-1.5">
+      {% for i in 1..=5 %}
+        <div class="relative" style="width:1.75rem;height:1.75rem">
+          {# Left half click: sets half-star (i - 0.5), or clears if same #}
+          <button
+            type="button"
+            class="absolute inset-y-0 left-0 w-1/2 z-10 cursor-pointer"
+            data-on:click="$_rating = $_rating === {{ i }} - 0.5 ? 0 : {{ i }} - 0.5"
+            aria-label="Rate {{ i }} minus half out of 5"
+          ></button>
+          {# Right half click: sets full star (i), or clears if same #}
+          <button
+            type="button"
+            class="absolute inset-y-0 right-0 w-1/2 z-10 cursor-pointer"
+            data-on:click="$_rating = $_rating === {{ i }} ? 0 : {{ i }}"
+            aria-label="Rate {{ i }} out of 5"
+          ></button>
+          {# Full star #}
+          <span
+            class="absolute inset-0 pointer-events-none"
+            data-show="$_rating >= {{ i }}"
+          >
+            {{ icons::star("h-7 w-7 text-accent") }}
+          </span>
+          {# Half star: left half filled, right half muted #}
+          <span
+            class="pointer-events-none"
+            data-show="$_rating >= {{ i }} - 0.5 && $_rating < {{ i }}"
+            style="display:none"
+          >
+            <span class="absolute inset-0">
+              {{ icons::star("h-7 w-7 text-text-muted/30") }}
+            </span>
+            <span class="absolute inset-0" style="clip-path:inset(0 50% 0 0)">
+              {{ icons::star("h-7 w-7 text-accent") }}
+            </span>
+          </span>
+          {# Empty star #}
+          <span
+            class="absolute inset-0 pointer-events-none"
+            data-show="$_rating < {{ i }} - 0.5"
+            style="display:none"
+          >
+            {{ icons::star("h-7 w-7 text-text-muted/30") }}
+          </span>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+{% endmacro %}
+
+{% macro edit_form_actions() %}
+  <p
+    data-show="$_submitError"
+    data-text="$_submitError"
+    style="display:none"
+    class="text-sm text-error"
+    role="alert"
+  ></p>
+  <div
+    data-show="$_submitting"
+    style="display:none"
+    class="flex items-center justify-center gap-3 py-2 text-sm text-accent"
+  >
+    {{ icons::spinner("h-5 w-5") }} Saving&hellip;
+  </div>
+  <div class="sticky-submit flex flex-col gap-2" data-show="!$_submitting">
+    <button
+      type="submit"
+      class="inline-flex w-full items-center justify-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-semibold text-accent-text transition hover:bg-accent-hover disabled:opacity-50"
+    >
+      {{ icons::check("h-4 w-4") }} Save Changes
+    </button>
+    <button
+      type="button"
+      onclick="history.back()"
+      class="inline-flex w-full items-center justify-center gap-2 rounded-md border px-4 py-2 text-sm font-medium text-text-secondary transition hover:bg-surface-alt"
+    >
+      {{ icons::x_mark("h-4 w-4") }} Cancel
+    </button>
+  </div>
+{% endmacro %}
+
+{% macro edit_delete_buttons(edit_url, entity_label, api_path, id) %}
+  <div
+    class="rounded-lg border bg-surface p-5 flex flex-col gap-2 sm:flex-row sm:items-center"
+  >
+    <a
+      href="{{ edit_url }}"
+      class="inline-flex items-center justify-center gap-2 rounded-md border px-4 py-2 text-sm font-medium text-accent transition hover:bg-surface-alt sm:flex-1"
+    >
+      {{ icons::pencil("h-4 w-4") }} Edit
+    </a>
+    <button
+      type="button"
+      class="inline-flex items-center justify-center gap-2 rounded-md border px-4 py-2 text-sm font-medium text-error transition hover:bg-surface-alt sm:flex-1"
+      data-on:click="confirm('Delete this {{ entity_label }}? This cannot be undone.') && @delete('{{ api_path }}/{{ id }}')"
+    >
+      {{ icons::delete("h-4 w-4") }} Delete
+    </button>
+  </div>
+{% endmacro %}

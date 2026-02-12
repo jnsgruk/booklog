@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+{% import "partials/icons.html" as icons %}
+{% import "partials/image_section.html" as img %}
+{% block title %}Booklog · {{ book.title }}{% endblock %}
+{% block og_title %}{{ book.title }} — Booklog{% endblock %}
+{% block og_description %}{{ book.title }} by {{ book.author_label }}{% endblock %}
+{% block head %}
+  <meta property="og:image" content="{{ base_url }}/static/og-image.png" />
+{% endblock %}
+{% block content %}
+  <header class="flex items-start justify-between gap-4">
+    <div class="flex items-center gap-4 min-w-0">
+      {{ img::image_thumbnail("book", book.id, image_url, is_authenticated) }}
+      <div class="flex flex-col gap-1 min-w-0">
+        <h1 class="text-2xl font-semibold truncate">{{ book.title }}</h1>
+        <p class="text-sm text-text-secondary">
+          <a
+            href="/data?type=books"
+            class="text-accent hover:text-accent-hover transition"
+            >Books</a
+          >
+          · {{ book.created_date }}
+        </p>
+      </div>
+    </div>
+  </header>
+  {{ img::lightbox_script() }}
+
+  <div class="grid gap-6 md:grid-cols-2">
+    <div class="rounded-lg border bg-surface p-5">
+      <h2 class="text-lg font-semibold text-text mb-4">Details</h2>
+      <dl class="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+        <div>
+          <dt class="text-text-muted">Author</dt>
+          <dd class="font-medium text-text">
+            {% for (author_id, name) in book.author_links %}
+              <a
+                href="/authors/{{ author_id }}"
+                class="text-accent hover:text-accent-hover transition"
+                >{{ name }}</a
+              >{% if !loop.last %},{% endif %}
+            {% endfor %}
+            {% if book.author_links.is_empty() %}{{ book.author_label }}{% endif %}
+          </dd>
+        </div>
+        <div>
+          <dt class="text-text-muted">ISBN</dt>
+          <dd class="font-medium text-text">{{ book.isbn }}</dd>
+        </div>
+        <div>
+          <dt class="text-text-muted">Pages</dt>
+          <dd class="font-medium text-text">{{ book.page_count }}</dd>
+        </div>
+        <div>
+          <dt class="text-text-muted">Published</dt>
+          <dd class="font-medium text-text">{{ book.year_published }}</dd>
+        </div>
+        <div>
+          <dt class="text-text-muted">Publisher</dt>
+          <dd class="font-medium text-text">{{ book.publisher }}</dd>
+        </div>
+        <div>
+          <dt class="text-text-muted">Language</dt>
+          <dd class="font-medium text-text">{{ book.language }}</dd>
+        </div>
+      </dl>
+    </div>
+
+    {% if let Some(info) = library_info %}
+      <div class="rounded-lg border bg-surface p-5">
+        <h2 class="text-lg font-semibold text-text mb-4">
+          {{ info.shelf_heading }}
+        </h2>
+        <dl class="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+          <div>
+            <dt class="text-text-muted">Added</dt>
+            <dd class="font-medium text-text">{{ info.date_added }}</dd>
+          </div>
+          <div>
+            <dt class="text-text-muted">Status</dt>
+            <dd class="font-medium text-text">{{ info.status_label }}</dd>
+          </div>
+          <div>
+            <dt class="text-text-muted">Format</dt>
+            <dd class="font-medium text-text">{{ info.format_label }}</dd>
+          </div>
+        </dl>
+        {% if info.book_club %}
+          <div class="mt-3">
+            <span class="pill pill-success text-2xs">Book Club</span>
+          </div>
+        {% endif %}
+      </div>
+    {% endif %}
+
+    {% if !book.genre_links.is_empty() %}
+      <div class="rounded-lg border bg-surface p-5">
+        <h2 class="text-lg font-semibold text-text mb-4">Genres</h2>
+        <div class="flex flex-wrap gap-2">
+          {% for (name, path) in book.genre_links %}
+            <a
+              href="{{ path }}"
+              class="pill pill-muted hover:border-accent/40 transition"
+              >{{ name }}</a
+            >
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  {% if !readings.is_empty() %}
+    <section>
+      <div class="mb-3">
+        <h2 class="text-lg font-semibold text-text">
+          Readings
+          <span class="text-sm font-normal text-text-muted"
+            >({{ readings.len() }})</span
+          >
+        </h2>
+      </div>
+      <div class="grid gap-4 md:grid-cols-2">
+        {% for r in readings %}
+          <a
+            href="{{ r.detail_path }}"
+            class="rounded-lg border bg-surface p-5 hover:border-accent/40 transition block"
+          >
+            <dl class="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+              <div>
+                <dt class="text-text-muted">Status</dt>
+                <dd class="font-medium text-text">{{ r.status_label }}</dd>
+              </div>
+              <div>
+                <dt class="text-text-muted">Format</dt>
+                <dd class="font-medium text-text">{{ r.format_label }}</dd>
+              </div>
+              <div>
+                <dt class="text-text-muted">Rating</dt>
+                <dd class="font-medium text-text">{{ r.rating }}</dd>
+              </div>
+              <div>
+                <dt class="text-text-muted">Started</dt>
+                <dd class="font-medium text-text">{{ r.started_date }}</dd>
+              </div>
+              <div>
+                <dt class="text-text-muted">Finished</dt>
+                <dd class="font-medium text-text">{{ r.finished_date }}</dd>
+              </div>
+            </dl>
+            {% if !r.quick_reviews.is_empty() %}
+              <div class="flex flex-wrap gap-2 mt-3">
+                {% for qr in r.quick_reviews %}
+                  <span class="{{ qr.pill_class }}">{{ qr.label }}</span>
+                {% endfor %}
+              </div>
+            {% endif %}
+          </a>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+
+  {% if let Some(desc) = book.description %}
+    <div class="rounded-lg border bg-surface p-5">
+      <h2 class="text-lg font-semibold text-text mb-4">Description</h2>
+      <p class="text-sm text-text-secondary whitespace-pre-line">{{ desc }}</p>
+    </div>
+  {% endif %}
+
+  {% if is_authenticated %}
+    <div
+      class="rounded-lg border bg-surface p-5 flex flex-col gap-2 sm:flex-row sm:items-center"
+    >
+      {% if let Some(rid) = active_reading_id %}
+        <a
+          href="/readings/{{ rid }}/edit?finish=true"
+          class="inline-flex items-center justify-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-semibold text-accent-text transition hover:bg-accent-hover sm:flex-1"
+        >
+          {{ icons::check_circle("h-4 w-4") }} Finish Reading
+        </a>
+      {% else if let Some(info) = library_info %}
+        <a
+          href="/books/{{ book.id }}/start"
+          class="inline-flex items-center justify-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-semibold text-accent-text transition hover:bg-accent-hover sm:flex-1"
+        >
+          {{ icons::bookmark("h-4 w-4") }} Start Reading
+        </a>
+      {% else %}
+        <a
+          href="/add?type=reading&book_id={{ book.id }}"
+          class="inline-flex items-center justify-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-semibold text-accent-text transition hover:bg-accent-hover sm:flex-1"
+        >
+          {{ icons::bookmark("h-4 w-4") }} Add to Library
+        </a>
+      {% endif %}
+      <a
+        href="{{ edit_url }}"
+        class="inline-flex items-center justify-center gap-2 rounded-md border px-4 py-2 text-sm font-medium text-accent transition hover:bg-surface-alt sm:flex-1"
+      >
+        {{ icons::pencil("h-4 w-4") }} Edit
+      </a>
+      <button
+        type="button"
+        class="inline-flex items-center justify-center gap-2 rounded-md border px-4 py-2 text-sm font-medium text-error transition hover:bg-surface-alt sm:flex-1"
+        data-on:click="confirm('Delete this book? This cannot be undone.') && @delete('/api/v1/books/{{ book.id }}')"
+      >
+        {{ icons::delete("h-4 w-4") }} Delete
+      </button>
+    </div>
+  {% endif %}
+{% endblock %}

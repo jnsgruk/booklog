@@ -1,0 +1,311 @@
+{% extends "base.html" %}
+{% import "partials/icons.html" as icons %}
+{% import "partials/detail_cards.html" as cards %}
+{% import "partials/image_section.html" as img %}
+{% block title %}Booklog · Edit Book{% endblock %}
+{% block content %}
+  <header>
+    <h1 class="text-2xl font-semibold">Edit Book</h1>
+  </header>
+
+  <section
+    data-signals:_submitting="false"
+    data-signals:_submit-error="''"
+    data-signals:_fetching-covers="false"
+    data-signals:_fetch-error="''"
+    data-signals:_cover-1="''"
+    data-signals:_cover-2="''"
+    data-signals:_cover-3="''"
+    data-signals:_cover-4="''"
+    data-signals:_cover-5="''"
+    data-signals:_selected-cover="''"
+  >
+    <form
+      class="flex flex-col gap-6 pb-16 md:pb-0"
+      data-on:submit="$_submitting = true; $_submitError = ''; @put('/api/v1/books/{{ id }}', {contentType: 'form'})"
+      data-on:datastar-fetch="if (!$_submitting) return; if (evt.detail.type === 'finished') { sessionStorage.setItem('toast', 'Book updated'); window.location.href = '/books/' + '{{ id }}' } else if (evt.detail.type === 'error') { $_submitting = false; $_submitError = 'Save failed. Please try again.' }"
+    >
+      <label class="flex flex-col gap-1 text-sm">
+        <span
+          class="text-xs font-semibold text-text-muted uppercase tracking-wide"
+          >Title*</span
+        >
+        <input
+          type="text"
+          name="title"
+          value="{{ title }}"
+          required
+          aria-required="true"
+          class="input-field"
+        />
+      </label>
+      <div class="grid gap-4 sm:grid-cols-2">
+        <label class="flex flex-col gap-1 text-sm">
+          <span
+            class="text-xs font-semibold text-text-muted uppercase tracking-wide"
+            >ISBN</span
+          >
+          <input
+            type="text"
+            name="isbn"
+            value="{{ isbn }}"
+            class="input-field"
+          />
+        </label>
+        <label class="flex flex-col gap-1 text-sm">
+          <span
+            class="text-xs font-semibold text-text-muted uppercase tracking-wide"
+            >Pages</span
+          >
+          <input
+            type="number"
+            name="page_count"
+            value="{{ page_count }}"
+            class="input-field"
+          />
+        </label>
+        <label class="flex flex-col gap-1 text-sm">
+          <span
+            class="text-xs font-semibold text-text-muted uppercase tracking-wide"
+            >Year Published</span
+          >
+          <input
+            type="number"
+            name="year_published"
+            value="{{ year_published }}"
+            class="input-field"
+          />
+        </label>
+        <label class="flex flex-col gap-1 text-sm">
+          <span
+            class="text-xs font-semibold text-text-muted uppercase tracking-wide"
+            >Publisher</span
+          >
+          <input
+            type="text"
+            name="publisher"
+            value="{{ publisher }}"
+            class="input-field"
+          />
+        </label>
+        <label class="flex flex-col gap-1 text-sm">
+          <span
+            class="text-xs font-semibold text-text-muted uppercase tracking-wide"
+            >Language</span
+          >
+          <input
+            type="text"
+            name="language"
+            value="{{ language }}"
+            class="input-field"
+          />
+        </label>
+      </div>
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div class="flex flex-col gap-1 text-sm">
+          <span
+            class="text-xs font-semibold text-text-muted uppercase tracking-wide"
+            >Primary Genre</span
+          >
+          <searchable-select
+            name="primary_genre_id"
+            placeholder="Type to search genres&hellip;"
+            creatable
+            {% if !primary_genre_id.is_empty() %}initial-value="{{ primary_genre_id }}"{% endif %}
+          >
+            {% for genre in genre_options %}
+              <button
+                type="button"
+                value="{{ genre.id }}"
+                data-display="{{ genre.name }}"
+                class="w-full px-3 py-2 text-left text-sm hover:bg-surface-alt transition"
+              >
+                <span class="font-medium text-text">{{ genre.name }}</span>
+              </button>
+            {% endfor %}
+          </searchable-select>
+        </div>
+        <div class="flex flex-col gap-1 text-sm">
+          <span
+            class="text-xs font-semibold text-text-muted uppercase tracking-wide"
+            >Secondary Genre</span
+          >
+          <searchable-select
+            name="secondary_genre_id"
+            placeholder="Type to search genres&hellip;"
+            creatable
+            {% if !secondary_genre_id.is_empty() %}initial-value="{{ secondary_genre_id }}"{% endif %}
+          >
+            {% for genre in genre_options %}
+              <button
+                type="button"
+                value="{{ genre.id }}"
+                data-display="{{ genre.name }}"
+                class="w-full px-3 py-2 text-left text-sm hover:bg-surface-alt transition"
+              >
+                <span class="font-medium text-text">{{ genre.name }}</span>
+              </button>
+            {% endfor %}
+          </searchable-select>
+        </div>
+      </div>
+      <div class="flex flex-col gap-1 text-sm">
+        <span
+          class="text-xs font-semibold text-text-muted uppercase tracking-wide"
+          >Authors</span
+        >
+        <searchable-select
+          name="author_ids"
+          placeholder="Type to search authors&hellip;"
+          multiple
+          {% if !author_id.is_empty() %}initial-value="{{ author_id }}"{% endif %}
+        >
+          {% for author in author_options %}
+            <button
+              type="button"
+              value="{{ author.id }}"
+              data-display="{{ author.name }}"
+              class="w-full px-3 py-2 text-left text-sm hover:bg-surface-alt transition"
+            >
+              <span class="font-medium text-text">{{ author.name }}</span>
+            </button>
+          {% endfor %}
+        </searchable-select>
+      </div>
+      <label class="flex flex-col gap-1 text-sm">
+        <span
+          class="text-xs font-semibold text-text-muted uppercase tracking-wide"
+          >Description</span
+        >
+        <textarea name="description" rows="4" class="input-field">
+{{ description }}</textarea
+        >
+      </label>
+      {{ img::deferred_upload_with_preview("book-image", "Book cover", "book", id, image_url) }}
+      <!-- Fetch covers -->
+      <div
+        data-on:datastar-fetch="if (!$_fetchingCovers) return;
+          if (evt.detail.type === 'finished') { $_fetchingCovers = false }
+          else if (evt.detail.type === 'error') { $_fetchingCovers = false; $_fetchError = 'Failed to fetch covers. Please try again.' }"
+      >
+        <button
+          type="button"
+          data-on:click="$_fetchingCovers = true; $_fetchError = ''; $_selectedCover = ''; @post('/api/v1/books/{{ id }}/fetch-covers')"
+          data-show="!$_fetchingCovers"
+          class="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium text-accent transition hover:bg-surface-alt"
+        >
+          {{ icons::camera("h-4 w-4") }} Fetch covers
+        </button>
+        <div
+          data-show="$_fetchingCovers"
+          style="display:none"
+          class="flex items-center gap-3 py-2 text-sm text-accent"
+        >
+          {{ icons::spinner("h-5 w-5") }} Searching for covers&hellip;
+        </div>
+        <p
+          data-show="$_fetchError"
+          data-text="$_fetchError"
+          style="display:none"
+          class="mt-2 text-sm text-error"
+          role="alert"
+        ></p>
+        <!-- Cover picker -->
+        <div
+          data-show="$_cover1 || $_cover2 || $_cover3 || $_cover4 || $_cover5"
+          style="display:none"
+          class="mt-3"
+        >
+          <p class="text-sm text-text-secondary">Select a cover image.</p>
+          <div class="mt-2 flex gap-3 overflow-x-auto scrollbar-hide pb-1">
+            <button
+              type="button"
+              data-show="$_cover1"
+              style="display:none"
+              data-on:click="$_selectedCover = $_cover1"
+              data-attr:class="'flex shrink-0 flex-col items-center gap-1.5 rounded-lg border-2 p-2 transition cursor-pointer ' + ($_selectedCover === $_cover1 ? 'border-accent bg-accent/5' : 'border-transparent hover:border-accent/30')"
+            >
+              <img
+                data-attr:src="$_cover1 ? '/api/v1/cover-suggestions/' + $_cover1 + '/thumbnail' : ''"
+                alt=""
+                class="h-28 w-auto rounded object-contain"
+              />
+            </button>
+            <button
+              type="button"
+              data-show="$_cover2"
+              style="display:none"
+              data-on:click="$_selectedCover = $_cover2"
+              data-attr:class="'flex shrink-0 flex-col items-center gap-1.5 rounded-lg border-2 p-2 transition cursor-pointer ' + ($_selectedCover === $_cover2 ? 'border-accent bg-accent/5' : 'border-transparent hover:border-accent/30')"
+            >
+              <img
+                data-attr:src="$_cover2 ? '/api/v1/cover-suggestions/' + $_cover2 + '/thumbnail' : ''"
+                alt=""
+                class="h-28 w-auto rounded object-contain"
+              />
+            </button>
+            <button
+              type="button"
+              data-show="$_cover3"
+              style="display:none"
+              data-on:click="$_selectedCover = $_cover3"
+              data-attr:class="'flex shrink-0 flex-col items-center gap-1.5 rounded-lg border-2 p-2 transition cursor-pointer ' + ($_selectedCover === $_cover3 ? 'border-accent bg-accent/5' : 'border-transparent hover:border-accent/30')"
+            >
+              <img
+                data-attr:src="$_cover3 ? '/api/v1/cover-suggestions/' + $_cover3 + '/thumbnail' : ''"
+                alt=""
+                class="h-28 w-auto rounded object-contain"
+              />
+            </button>
+            <button
+              type="button"
+              data-show="$_cover4"
+              style="display:none"
+              data-on:click="$_selectedCover = $_cover4"
+              data-attr:class="'flex shrink-0 flex-col items-center gap-1.5 rounded-lg border-2 p-2 transition cursor-pointer ' + ($_selectedCover === $_cover4 ? 'border-accent bg-accent/5' : 'border-transparent hover:border-accent/30')"
+            >
+              <img
+                data-attr:src="$_cover4 ? '/api/v1/cover-suggestions/' + $_cover4 + '/thumbnail' : ''"
+                alt=""
+                class="h-28 w-auto rounded object-contain"
+              />
+            </button>
+            <button
+              type="button"
+              data-show="$_cover5"
+              style="display:none"
+              data-on:click="$_selectedCover = $_cover5"
+              data-attr:class="'flex shrink-0 flex-col items-center gap-1.5 rounded-lg border-2 p-2 transition cursor-pointer ' + ($_selectedCover === $_cover5 ? 'border-accent bg-accent/5' : 'border-transparent hover:border-accent/30')"
+            >
+              <img
+                data-attr:src="$_cover5 ? '/api/v1/cover-suggestions/' + $_cover5 + '/thumbnail' : ''"
+                alt=""
+                class="h-28 w-auto rounded object-contain"
+              />
+            </button>
+            <button
+              type="button"
+              data-show="$_selectedCover"
+              style="display:none"
+              data-on:click="$_selectedCover = ''"
+              data-attr:class="'flex shrink-0 flex-col items-center gap-1.5 rounded-lg border-2 p-2 transition cursor-pointer ' + (!$_selectedCover ? 'border-accent bg-accent/5' : 'border-transparent hover:border-accent/30')"
+            >
+              <div
+                class="flex h-28 w-20 items-center justify-center rounded bg-surface-alt"
+              >
+                {{ icons::x_mark("h-6 w-6 text-text-muted") }}
+              </div>
+              <span class="text-xs text-text-muted">None</span>
+            </button>
+          </div>
+        </div>
+        <input
+          type="hidden"
+          name="selected_cover_id"
+          data-attr:value="$_selectedCover"
+        />
+      </div>
+      {{ cards::edit_form_actions() }}
+    </form>
+  </section>
+{% endblock %}

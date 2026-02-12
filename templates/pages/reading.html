@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% import "partials/icons.html" as icons %}
+{% block title %}Booklog · {{ reading.book_title }}{% endblock %}
+{% block og_title %}{{ reading.book_title }} — Booklog{% endblock %}
+{% block og_description %}
+  {{ reading.book_title }}
+  by {{ reading.author_names }} — {{ reading.status_label }}
+{% endblock %}
+{% block head %}
+  <meta property="og:image" content="{{ base_url }}/static/og-image.png" />
+{% endblock %}
+{% block content %}
+  <header class="flex items-start justify-between gap-4">
+    <div class="flex flex-col gap-1 min-w-0">
+      <h1 class="text-2xl font-semibold truncate">{{ reading.book_title }}</h1>
+      <p class="text-sm text-text-secondary">
+        <a
+          href="/data?type=readings"
+          class="text-accent hover:text-accent-hover transition"
+          >Library</a
+        >
+        · {{ reading.created_date }}
+      </p>
+    </div>
+  </header>
+
+  <div class="grid gap-6 md:grid-cols-2">
+    <div class="rounded-lg border bg-surface p-5">
+      <h2 class="text-lg font-semibold text-text mb-4">Details</h2>
+      <dl class="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+        <div>
+          <dt class="text-text-muted">Book</dt>
+          <dd class="font-medium">
+            <a
+              href="/books/{{ reading.book_id }}"
+              class="text-accent hover:text-accent-hover transition"
+              >{{ reading.book_title }}</a
+            >
+          </dd>
+        </div>
+        <div>
+          <dt class="text-text-muted">Author</dt>
+          <dd class="font-medium text-text">{{ reading.author_names }}</dd>
+        </div>
+        <div>
+          <dt class="text-text-muted">Status</dt>
+          <dd class="font-medium text-text">{{ reading.status_label }}</dd>
+        </div>
+        <div>
+          <dt class="text-text-muted">Format</dt>
+          <dd class="font-medium text-text">{{ reading.format_label }}</dd>
+        </div>
+        <div>
+          <dt class="text-text-muted">Rating</dt>
+          <dd class="font-medium text-text">{{ reading.rating }}</dd>
+        </div>
+        <div>
+          <dt class="text-text-muted">Started</dt>
+          <dd class="font-medium text-text">{{ reading.started_date }}</dd>
+        </div>
+        <div>
+          <dt class="text-text-muted">Finished</dt>
+          <dd class="font-medium text-text">{{ reading.finished_date }}</dd>
+        </div>
+      </dl>
+    </div>
+
+    {% if !reading.quick_reviews.is_empty() %}
+      <div class="rounded-lg border bg-surface p-5">
+        <h2 class="text-lg font-semibold text-text mb-4">Review</h2>
+        <div class="flex flex-wrap gap-2">
+          {% for qr in reading.quick_reviews %}
+            <span class="{{ qr.pill_class }}">{{ qr.label }}</span>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  {% if is_authenticated %}
+    <div
+      class="rounded-lg border bg-surface p-5 flex flex-col gap-2 sm:flex-row sm:items-center"
+    >
+      <a
+        href="{{ edit_url }}"
+        class="inline-flex items-center justify-center gap-2 rounded-md border px-4 py-2 text-sm font-medium text-accent transition hover:bg-surface-alt sm:flex-1"
+      >
+        {{ icons::pencil("h-4 w-4") }} Edit
+      </a>
+      <button
+        type="button"
+        class="inline-flex items-center justify-center gap-2 rounded-md border px-4 py-2 text-sm font-medium text-error transition hover:bg-surface-alt sm:flex-1"
+        data-on:click="confirm('Delete this library entry? This cannot be undone.') && @delete('/api/v1/readings/{{ reading.id }}')"
+      >
+        {{ icons::delete("h-4 w-4") }} Delete
+      </button>
+    </div>
+  {% endif %}
+{% endblock %}

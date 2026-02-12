@@ -1,0 +1,314 @@
+{% import "partials/icons.html" as icons %}
+{% import "partials/histogram.html" as histogram %}
+
+{% if has_data %}
+  {# ── Section 1a: Reading Summary ── #}
+  <section>
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="text-lg font-semibold text-text">Reading Summary</h2>
+    </div>
+    <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div
+        class="flex flex-col items-center gap-1 rounded-lg border bg-surface p-4"
+      >
+        {{ icons::book("h-6 w-6 text-text-muted") }}
+        <span class="text-lg font-bold text-text"
+          >{{ reading.books_all_time }}</span
+        >
+        <span class="text-sm font-medium text-text-muted">Books Read</span>
+      </div>
+      <div
+        class="flex flex-col items-center gap-1 rounded-lg border bg-surface p-4"
+      >
+        {{ icons::book("h-6 w-6 text-text-muted") }}
+        <span class="text-lg font-bold text-text">{{ pages_formatted }}</span>
+        <span class="text-sm font-medium text-text-muted">Pages Read</span>
+      </div>
+      <div
+        class="flex flex-col items-center gap-1 rounded-lg border bg-surface p-4"
+      >
+        {{ icons::clock("h-6 w-6 text-text-muted") }}
+        <span class="text-lg font-bold text-text truncate max-w-full"
+          >{{ avg_days_formatted }}</span
+        >
+        <span class="text-sm font-medium text-text-muted">Avg to Finish</span>
+      </div>
+    </div>
+  </section>
+
+  {# ── Section 1b: Most Liked ── #}
+  <section>
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="text-lg font-semibold text-text">Most Liked</h2>
+    </div>
+    <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div
+        class="flex flex-col items-center gap-1 rounded-lg border bg-surface p-4"
+      >
+        {{ icons::pen("h-6 w-6 text-text-muted") }}
+        <span class="text-lg font-bold text-text truncate max-w-full"
+          >{% match book_summary.top_author %}{% when Some with (name) %}{{ name }}{% when None %}—{% endmatch %}</span
+        >
+        <span class="text-sm font-medium text-text-muted">Top Author</span>
+      </div>
+      <div
+        class="flex flex-col items-center gap-1 rounded-lg border bg-surface p-4"
+      >
+        {{ icons::tag("h-6 w-6 text-text-muted") }}
+        <span class="text-lg font-bold text-text truncate max-w-full"
+          >{% match book_summary.top_genre %}{% when Some with (name) %}{{ name }}{% when None %}—{% endmatch %}</span
+        >
+        <span class="text-sm font-medium text-text-muted">Top Genre</span>
+      </div>
+      <div
+        class="flex flex-col items-center gap-1 rounded-lg border bg-surface p-4"
+      >
+        {{ icons::star("h-6 w-6 text-text-muted") }}
+        <span class="text-lg font-bold text-text truncate max-w-full"
+          >{% match book_summary.most_rated_author %}{% when Some with (name) %}{{ name }}{% when None %}—{% endmatch %}</span
+        >
+        <span class="text-sm font-medium text-text-muted"
+          >Most Rated Author</span
+        >
+      </div>
+      <div
+        class="flex flex-col items-center gap-1 rounded-lg border bg-surface p-4"
+      >
+        {{ icons::star("h-6 w-6 text-text-muted") }}
+        <span class="text-lg font-bold text-text truncate max-w-full"
+          >{% match book_summary.most_rated_genre %}{% when Some with (name) %}{{ name }}{% when None %}—{% endmatch %}</span
+        >
+        <span class="text-sm font-medium text-text-muted"
+          >Most Rated Genre</span
+        >
+      </div>
+    </div>
+  </section>
+
+  {# ── Section 2: Activity ── #}
+  {% if !activity_chart_data.is_empty() %}
+    <section>
+      <div class="flex items-center justify-between mb-5">
+        <h2 class="text-lg font-semibold text-text">
+          {% if is_year_view %}Monthly Activity{% else %}Yearly Activity{% endif %}
+        </h2>
+      </div>
+      <div class="rounded-lg border bg-surface p-5">
+        <bar-chart
+          data-items="{{ activity_chart_data }}"
+          data-label-1="Books"
+          data-label-2="Pages"
+        ></bar-chart>
+      </div>
+    </section>
+  {% endif %}
+
+  {# ── Section 3: Rating Distribution ── #}
+  {% if !rating_chart_data.is_empty() %}
+    <section class="flex flex-col">
+      <div class="flex items-center justify-between mb-5">
+        <div>
+          <h2 class="text-lg font-semibold text-text">Ratings</h2>
+          <p class="text-xs text-text-muted">
+            {{ avg_rating_formatted }} average
+          </p>
+        </div>
+      </div>
+      <div
+        class="flex items-center justify-center rounded-lg border bg-surface p-5"
+      >
+        <donut-chart
+          data-icon="star"
+          data-items="{{ rating_chart_data }}"
+        ></donut-chart>
+      </div>
+    </section>
+  {% endif %}
+
+  {# ── Section 3b: Genres ── #}
+  {% if !book_summary.genre_counts.is_empty() %}
+    <section>
+      <div class="flex items-center justify-between mb-5">
+        <div>
+          <h2 class="text-lg font-semibold text-text">Genres</h2>
+          <p class="text-xs text-text-muted">
+            {{ book_summary.unique_genres }} unique
+          </p>
+        </div>
+      </div>
+      <div class="flex flex-col [&>div]:flex-1">
+        {{ histogram::bar_chart(book_summary.genre_counts, book_summary.max_genre_count) }}
+      </div>
+    </section>
+  {% endif %}
+
+  {# ── Section 4: Page Count Distribution + Reading Pace ── #}
+  {% if !book_summary.page_count_distribution.is_empty() || !reading.pace_distribution.is_empty() %}
+    <div class="grid gap-8 md:grid-cols-2">
+      {% if !book_summary.page_count_distribution.is_empty() %}
+        <section class="flex flex-col">
+          <div class="flex items-center justify-between mb-5">
+            <h2 class="text-lg font-semibold text-text">Page Count</h2>
+          </div>
+          <div
+            class="flex flex-1 items-center justify-center rounded-lg border bg-surface p-5"
+          >
+            <donut-chart
+              data-icon="book"
+              data-items="{% for item in book_summary.page_count_distribution %}{% if !loop.first %}|{% endif %}{{ item.0 }}:{{ item.1 }}{% endfor %}"
+            ></donut-chart>
+          </div>
+        </section>
+      {% endif %}
+
+      {% if !reading.pace_distribution.is_empty() %}
+        <section class="flex flex-col">
+          <div class="flex items-center justify-between mb-5">
+            <h2 class="text-lg font-semibold text-text">Reading Pace</h2>
+          </div>
+          <div
+            class="flex flex-1 items-center justify-center rounded-lg border bg-surface p-5"
+          >
+            <donut-chart
+              data-icon="bookmark"
+              data-items="{% for item in reading.pace_distribution %}{% if !loop.first %}|{% endif %}{{ item.0 }}:{{ item.1 }}{% endfor %}"
+            ></donut-chart>
+          </div>
+        </section>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  {# ── Section 5: Top Authors ── #}
+  {% if !book_summary.top_authors.is_empty() %}
+    <section>
+      <div class="flex items-center justify-between mb-5">
+        <h2 class="text-lg font-semibold text-text">Top Authors</h2>
+      </div>
+      <div class="flex flex-col [&>div]:flex-1">
+        {{ histogram::bar_chart(book_summary.top_authors, book_summary.max_top_author_count) }}
+      </div>
+    </section>
+  {% endif %}
+
+  {# ── Section 6: Format Distribution + Book Records ── #}
+  {% if !reading.format_counts.is_empty() || book_summary.longest_book.is_some() || book_summary.shortest_book.is_some() %}
+    <div class="grid gap-8 md:grid-cols-2">
+      {% if !reading.format_counts.is_empty() %}
+        <section class="flex flex-col">
+          <div class="flex items-center justify-between mb-5">
+            <h2 class="text-lg font-semibold text-text">Format</h2>
+          </div>
+          <div
+            class="flex flex-1 items-center justify-center rounded-lg border bg-surface p-5"
+          >
+            <donut-chart
+              data-icon="book"
+              data-items="{% for item in reading.format_counts %}{% if !loop.first %}|{% endif %}{{ item.0 }}:{{ item.1 }}{% endfor %}"
+            ></donut-chart>
+          </div>
+        </section>
+      {% endif %}
+
+      {% if book_summary.longest_book.is_some() || book_summary.shortest_book.is_some() %}
+        <section class="flex flex-col">
+          <div class="flex items-center justify-between mb-5">
+            <h2 class="text-lg font-semibold text-text">Book Records</h2>
+          </div>
+          <div class="flex flex-1 flex-col justify-center gap-3">
+            {% match book_summary.longest_book %}
+              {% when Some with (book) %}
+              <div
+                class="flex flex-col items-center gap-1 rounded-lg border bg-surface p-4"
+              >
+                {{ icons::arrow_up("h-6 w-6 text-text-muted") }}
+                <span class="text-lg font-bold text-text"
+                  >{{ book.1 }} pages</span
+                >
+                <span
+                  class="text-sm font-medium text-text-muted truncate max-w-full"
+                  >Longest: {{ book.0 }}</span
+                >
+              </div>
+              {% when None %}
+            {% endmatch %}
+            {% match book_summary.shortest_book %}
+              {% when Some with (book) %}
+              <div
+                class="flex flex-col items-center gap-1 rounded-lg border bg-surface p-4"
+              >
+                {{ icons::arrow_down_tray("h-6 w-6 text-text-muted") }}
+                <span class="text-lg font-bold text-text"
+                  >{{ book.1 }} pages</span
+                >
+                <span
+                  class="text-sm font-medium text-text-muted truncate max-w-full"
+                  >Shortest: {{ book.0 }}</span
+                >
+              </div>
+              {% when None %}
+            {% endmatch %}
+          </div>
+        </section>
+      {% endif %}
+    </div>
+  {% endif %}
+{% else %}
+  <div class="relative">
+    <div
+      class="flex flex-col gap-8 blur-[2px] select-none pointer-events-none"
+      aria-hidden="true"
+    >
+      {# Placeholder: Reading Summary #}
+      <section>
+        <div class="mb-5">
+          <div class="h-5 w-36 rounded bg-surface-alt"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          {% for _ in 0..6 %}
+            <div
+              class="flex flex-col items-center gap-1 rounded-lg border bg-surface p-4"
+            >
+              <div class="h-6 w-6 rounded-full bg-surface-alt"></div>
+              <div class="h-5 w-10 rounded bg-surface-alt"></div>
+              <div class="h-4 w-16 rounded bg-surface-alt"></div>
+            </div>
+          {% endfor %}
+        </div>
+      </section>
+      {# Placeholder: Chart #}
+      <section>
+        <div class="mb-5">
+          <div class="h-5 w-32 rounded bg-surface-alt"></div>
+        </div>
+        <div class="rounded-lg border bg-surface p-5">
+          <div class="h-48 rounded bg-surface-alt"></div>
+        </div>
+      </section>
+      {# Placeholder: Two columns #}
+      <div class="grid gap-8 md:grid-cols-2">
+        <section>
+          <div class="mb-5">
+            <div class="h-5 w-24 rounded bg-surface-alt"></div>
+          </div>
+          <div class="rounded-lg border bg-surface p-5">
+            <div class="h-40 rounded bg-surface-alt"></div>
+          </div>
+        </section>
+        <section>
+          <div class="mb-5">
+            <div class="h-5 w-20 rounded bg-surface-alt"></div>
+          </div>
+          <div class="rounded-lg border bg-surface p-5">
+            <div class="h-40 rounded bg-surface-alt"></div>
+          </div>
+        </section>
+      </div>
+    </div>
+    <div class="absolute inset-0 z-10 flex items-center justify-center">
+      <span class="text-lg font-semibold text-text-muted">
+        {% if is_year_view %}No stats for this year{% else %}No stats yet{% endif %}
+      </span>
+    </div>
+  </div>
+{% endif %}

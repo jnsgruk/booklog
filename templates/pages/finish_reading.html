@@ -1,0 +1,281 @@
+{% extends "base.html" %}
+{% import "partials/icons.html" as icons %}
+{% import "partials/detail_cards.html" as cards %}
+{% block title %}Booklog · Finish Book{% endblock %}
+{% block content %}
+  <header>
+    <h1 class="text-2xl font-semibold">Finish Book</h1>
+  </header>
+
+  <section
+    data-signals:_submitting="false"
+    data-signals:_submit-error="''"
+    data-signals:_rating="{{ rating }}"
+    data-signals:_qr-loved-it="{% if quick_reviews.contains("loved-it") %}true{% else %}false{% endif %}"
+    data-signals:_qr-page-turner="{% if quick_reviews.contains("page-turner") %}true{% else %}false{% endif %}"
+    data-signals:_qr-thought-provoking="{% if quick_reviews.contains("thought-provoking") %}true{% else %}false{% endif %}"
+    data-signals:_qr-couldnt-put-down="{% if quick_reviews.contains("couldnt-put-down") %}true{% else %}false{% endif %}"
+    data-signals:_qr-great-characters="{% if quick_reviews.contains("great-characters") %}true{% else %}false{% endif %}"
+    data-signals:_qr-funny="{% if quick_reviews.contains("funny") %}true{% else %}false{% endif %}"
+    data-signals:_qr-moving="{% if quick_reviews.contains("moving") %}true{% else %}false{% endif %}"
+    data-signals:_qr-laughed-out-loud="{% if quick_reviews.contains("laughed-out-loud") %}true{% else %}false{% endif %}"
+    data-signals:_qr-relatable="{% if quick_reviews.contains("relatable") %}true{% else %}false{% endif %}"
+    data-signals:_qr-quick-read="{% if quick_reviews.contains("quick-read") %}true{% else %}false{% endif %}"
+    data-signals:_qr-slow-burn="{% if quick_reviews.contains("slow-burn") %}true{% else %}false{% endif %}"
+    data-signals:_qr-dense="{% if quick_reviews.contains("dense") %}true{% else %}false{% endif %}"
+    data-signals:_qr-predictable-plot="{% if quick_reviews.contains("predictable-plot") %}true{% else %}false{% endif %}"
+    data-signals:_qr-disappointing-ending="{% if quick_reviews.contains("disappointing-ending") %}true{% else %}false{% endif %}"
+    data-signals:_qr-unrelatable-characters="{% if quick_reviews.contains("unrelatable-characters") %}true{% else %}false{% endif %}"
+    data-signals:_qr-forgettable="{% if quick_reviews.contains("forgettable") %}true{% else %}false{% endif %}"
+    data-signals:_qr-too-long="{% if quick_reviews.contains("too-long") %}true{% else %}false{% endif %}"
+    data-signals:_qr-odd-pov="{% if quick_reviews.contains("odd-pov") %}true{% else %}false{% endif %}"
+    data-signals:_qr-overrated="{% if quick_reviews.contains("overrated") %}true{% else %}false{% endif %}"
+  >
+    <form
+      class="flex flex-col gap-6 pb-16 md:pb-0"
+      data-on:submit="$_submitting = true; $_submitError = ''; @put('/api/v1/readings/{{ id }}', {contentType: 'form'})"
+      data-on:datastar-fetch="if (!$_submitting) return; if (evt.detail.type === 'finished') { sessionStorage.setItem('toast', 'Book finished'); window.location.href = '/' } else if (evt.detail.type === 'error') { $_submitting = false; $_submitError = 'Save failed. Please try again.' }"
+    >
+      <input type="hidden" name="book_id" value="{{ book_id }}" />
+      <input type="hidden" name="status" value="{{ status }}" />
+      <input type="hidden" name="rating" data-bind:_rating />
+
+      <div
+        class="rounded-lg border bg-surface-alt px-4 py-3 flex gap-4 items-start"
+      >
+        {% if let Some(url) = thumbnail_url %}
+          <img
+            src="{{ url }}"
+            alt=""
+            class="h-20 w-14 rounded object-cover shrink-0"
+          />
+        {% else %}
+          <div
+            class="h-20 w-14 rounded bg-surface flex items-center justify-center shrink-0"
+          >
+            {{ icons::book("h-6 w-6 text-text-muted") }}
+          </div>
+        {% endif %}
+        <div class="flex flex-col gap-0.5 min-w-0">
+          <span
+            class="text-xs font-semibold text-text-muted uppercase tracking-wide"
+            >Book</span
+          >
+          <p class="font-medium text-text truncate">{{ book_label }}</p>
+          <p class="text-sm text-text-secondary truncate">{{ author_names }}</p>
+          {% if !page_count_label.is_empty() %}
+            <p class="text-xs text-text-muted">{{ page_count_label }}</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="grid gap-4 sm:grid-cols-2">
+        <label class="flex flex-col gap-1 text-sm">
+          <span
+            class="text-xs font-semibold text-text-muted uppercase tracking-wide"
+            >Format</span
+          >
+          <select name="format" class="input-field">
+            <option value="">&mdash;</option>
+            <option
+              value="physical"
+              {% if format == "physical" %}selected{% endif %}
+            >
+              Physical
+            </option>
+            <option
+              value="ereader"
+              {% if format == "ereader" %}selected{% endif %}
+            >
+              eReader
+            </option>
+            <option
+              value="audiobook"
+              {% if format == "audiobook" %}selected{% endif %}
+            >
+              Audiobook
+            </option>
+            <option
+              value="not_owned"
+              {% if format == "not_owned" %}selected{% endif %}
+            >
+              Not Owned
+            </option>
+          </select>
+        </label>
+        <label class="flex flex-col gap-1 text-sm">
+          <span
+            class="text-xs font-semibold text-text-muted uppercase tracking-wide"
+            >Started</span
+          >
+          <input
+            type="date"
+            name="started_at"
+            value="{{ started_at }}"
+            class="input-field"
+          />
+        </label>
+        <label class="flex flex-col gap-1 text-sm">
+          <span
+            class="text-xs font-semibold text-text-muted uppercase tracking-wide"
+            >Finished</span
+          >
+          <input
+            type="date"
+            name="finished_at"
+            value="{{ finished_at }}"
+            class="input-field"
+          />
+        </label>
+        {{ cards::star_rating() }}
+      </div>
+      <div>
+        <span
+          class="text-xs font-semibold text-text-muted uppercase tracking-wide"
+          >Review</span
+        >
+        <div class="mt-2 flex flex-wrap gap-2">
+          <button
+            type="button"
+            data-on:click="$_qrLovedIt = !$_qrLovedIt"
+            data-attr:class="$_qrLovedIt ? 'pill pill-success cursor-pointer select-none transition' : 'pill pill-muted cursor-pointer select-none transition'"
+          >
+            Loved it
+          </button>
+          <button
+            type="button"
+            data-on:click="$_qrPageTurner = !$_qrPageTurner"
+            data-attr:class="$_qrPageTurner ? 'pill pill-success cursor-pointer select-none transition' : 'pill pill-muted cursor-pointer select-none transition'"
+          >
+            Page-turner
+          </button>
+          <button
+            type="button"
+            data-on:click="$_qrThoughtProvoking = !$_qrThoughtProvoking"
+            data-attr:class="$_qrThoughtProvoking ? 'pill pill-success cursor-pointer select-none transition' : 'pill pill-muted cursor-pointer select-none transition'"
+          >
+            Thought-provoking
+          </button>
+          <button
+            type="button"
+            data-on:click="$_qrCouldntPutDown = !$_qrCouldntPutDown"
+            data-attr:class="$_qrCouldntPutDown ? 'pill pill-success cursor-pointer select-none transition' : 'pill pill-muted cursor-pointer select-none transition'"
+          >
+            Couldn't put down
+          </button>
+          <button
+            type="button"
+            data-on:click="$_qrGreatCharacters = !$_qrGreatCharacters"
+            data-attr:class="$_qrGreatCharacters ? 'pill pill-success cursor-pointer select-none transition' : 'pill pill-muted cursor-pointer select-none transition'"
+          >
+            Great characters
+          </button>
+          <button
+            type="button"
+            data-on:click="$_qrFunny = !$_qrFunny"
+            data-attr:class="$_qrFunny ? 'pill pill-success cursor-pointer select-none transition' : 'pill pill-muted cursor-pointer select-none transition'"
+          >
+            Funny
+          </button>
+          <button
+            type="button"
+            data-on:click="$_qrMoving = !$_qrMoving"
+            data-attr:class="$_qrMoving ? 'pill pill-success cursor-pointer select-none transition' : 'pill pill-muted cursor-pointer select-none transition'"
+          >
+            Moving
+          </button>
+          <button
+            type="button"
+            data-on:click="$_qrLaughedOutLoud = !$_qrLaughedOutLoud"
+            data-attr:class="$_qrLaughedOutLoud ? 'pill pill-success cursor-pointer select-none transition' : 'pill pill-muted cursor-pointer select-none transition'"
+          >
+            Laughed out loud
+          </button>
+          <button
+            type="button"
+            data-on:click="$_qrRelatable = !$_qrRelatable"
+            data-attr:class="$_qrRelatable ? 'pill pill-success cursor-pointer select-none transition' : 'pill pill-muted cursor-pointer select-none transition'"
+          >
+            Relatable
+          </button>
+          <button
+            type="button"
+            data-on:click="$_qrQuickRead = !$_qrQuickRead"
+            data-attr:class="$_qrQuickRead ? 'pill pill-info cursor-pointer select-none transition' : 'pill pill-muted cursor-pointer select-none transition'"
+          >
+            Quick read
+          </button>
+          <button
+            type="button"
+            data-on:click="$_qrSlowBurn = !$_qrSlowBurn"
+            data-attr:class="$_qrSlowBurn ? 'pill pill-info cursor-pointer select-none transition' : 'pill pill-muted cursor-pointer select-none transition'"
+          >
+            Slow burn
+          </button>
+          <button
+            type="button"
+            data-on:click="$_qrDense = !$_qrDense"
+            data-attr:class="$_qrDense ? 'pill pill-info cursor-pointer select-none transition' : 'pill pill-muted cursor-pointer select-none transition'"
+          >
+            Dense
+          </button>
+          <button
+            type="button"
+            data-on:click="$_qrPredictablePlot = !$_qrPredictablePlot"
+            data-attr:class="$_qrPredictablePlot ? 'pill pill-warning cursor-pointer select-none transition' : 'pill pill-muted cursor-pointer select-none transition'"
+          >
+            Predictable plot
+          </button>
+          <button
+            type="button"
+            data-on:click="$_qrDisappointingEnding = !$_qrDisappointingEnding"
+            data-attr:class="$_qrDisappointingEnding ? 'pill pill-warning cursor-pointer select-none transition' : 'pill pill-muted cursor-pointer select-none transition'"
+          >
+            Disappointing ending
+          </button>
+          <button
+            type="button"
+            data-on:click="$_qrUnrelatableCharacters = !$_qrUnrelatableCharacters"
+            data-attr:class="$_qrUnrelatableCharacters ? 'pill pill-warning cursor-pointer select-none transition' : 'pill pill-muted cursor-pointer select-none transition'"
+          >
+            Unrelatable characters
+          </button>
+          <button
+            type="button"
+            data-on:click="$_qrForgettable = !$_qrForgettable"
+            data-attr:class="$_qrForgettable ? 'pill pill-warning cursor-pointer select-none transition' : 'pill pill-muted cursor-pointer select-none transition'"
+          >
+            Forgettable
+          </button>
+          <button
+            type="button"
+            data-on:click="$_qrTooLong = !$_qrTooLong"
+            data-attr:class="$_qrTooLong ? 'pill pill-warning cursor-pointer select-none transition' : 'pill pill-muted cursor-pointer select-none transition'"
+          >
+            Too long
+          </button>
+          <button
+            type="button"
+            data-on:click="$_qrOddPov = !$_qrOddPov"
+            data-attr:class="$_qrOddPov ? 'pill pill-warning cursor-pointer select-none transition' : 'pill pill-muted cursor-pointer select-none transition'"
+          >
+            Odd POV
+          </button>
+          <button
+            type="button"
+            data-on:click="$_qrOverrated = !$_qrOverrated"
+            data-attr:class="$_qrOverrated ? 'pill pill-warning cursor-pointer select-none transition' : 'pill pill-muted cursor-pointer select-none transition'"
+          >
+            Overrated
+          </button>
+        </div>
+        <input
+          type="hidden"
+          name="quick_reviews"
+          data-attr:value="[$_qrLovedIt && 'loved-it', $_qrPageTurner && 'page-turner', $_qrThoughtProvoking && 'thought-provoking', $_qrCouldntPutDown && 'couldnt-put-down', $_qrGreatCharacters && 'great-characters', $_qrFunny && 'funny', $_qrMoving && 'moving', $_qrLaughedOutLoud && 'laughed-out-loud', $_qrRelatable && 'relatable', $_qrQuickRead && 'quick-read', $_qrSlowBurn && 'slow-burn', $_qrDense && 'dense', $_qrPredictablePlot && 'predictable-plot', $_qrDisappointingEnding && 'disappointing-ending', $_qrUnrelatableCharacters && 'unrelatable-characters', $_qrForgettable && 'forgettable', $_qrTooLong && 'too-long', $_qrOddPov && 'odd-pov', $_qrOverrated && 'overrated'].filter(Boolean).join(',')"
+        />
+      </div>
+      {{ cards::edit_form_actions() }}
+    </form>
+  </section>
+{% endblock %}

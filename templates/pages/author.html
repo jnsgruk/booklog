@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% import "partials/detail_cards.html" as detail %}
+{% import "partials/icons.html" as icons %}
+{% import "partials/image_section.html" as img %}
+{% block title %}Booklog · {{ author.name }}{% endblock %}
+{% block og_title %}{{ author.name }} — Booklog{% endblock %}
+{% block og_description %}{{ author.name }}{% endblock %}
+{% block head %}
+  <meta property="og:image" content="{{ base_url }}/static/og-image.png" />
+{% endblock %}
+{% block content %}
+  <header class="flex items-start justify-between gap-4">
+    <div class="flex items-center gap-4 min-w-0">
+      {{ img::image_thumbnail("author", author.id, image_url, is_authenticated) }}
+      <div class="flex flex-col gap-1 min-w-0">
+        <h1 class="text-2xl font-semibold truncate">{{ author.name }}</h1>
+        <p class="text-sm text-text-secondary">
+          <a
+            href="/data?type=authors"
+            class="text-accent hover:text-accent-hover transition"
+            >Authors</a
+          >
+          · {{ author.created_date }}
+        </p>
+      </div>
+    </div>
+  </header>
+  {{ img::lightbox_script() }}
+
+  <!-- Books in Library -->
+  <section>
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-lg font-semibold text-text">Books</h2>
+    </div>
+    {% if !library_books.is_empty() %}
+      <chip-scroll class="relative block">
+        <button
+          type="button"
+          aria-label="Scroll left"
+          class="hidden absolute -left-4 top-1/2 z-10 -translate-y-1/2 items-center justify-center rounded-full border bg-surface p-1.5 text-text-muted shadow-sm transition hover:text-text"
+          data-scroll-left
+          onclick="this.closest('chip-scroll').querySelector('[data-chip-scroll]').scrollBy({left: -220, behavior: 'smooth'})"
+        >
+          {{ icons::chevron_left("h-5 w-5") }}
+        </button>
+        <div
+          class="flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory scrollbar-hide"
+          data-chip-scroll
+        >
+          {% for book in library_books %}
+            <div
+              class="w-[200px] shrink-0 snap-start rounded-lg border bg-surface p-4 flex flex-col"
+            >
+              <a href="{{ book.detail_path }}" class="flex flex-col flex-1">
+                <div class="h-[3.25rem] overflow-hidden">
+                  <span class="block font-semibold text-text truncate"
+                    >{{ book.title }}</span
+                  >
+                </div>
+                <div class="mt-2 mb-3 flex justify-center">
+                  {% if let Some(url) = book.thumbnail_url %}
+                    <img
+                      src="{{ url }}"
+                      alt=""
+                      class="h-28 w-auto rounded object-contain"
+                    />
+                  {% else %}
+                    <div
+                      class="flex h-28 w-20 items-center justify-center rounded bg-surface-alt"
+                    >
+                      {{ icons::book("h-6 w-6 text-text-muted") }}
+                    </div>
+                  {% endif %}
+                </div>
+                <div
+                  class="flex-1 space-y-1 text-text-secondary"
+                  style="font-size: 0.8125rem"
+                >
+                  {% if !book.page_count_label.is_empty() %}
+                    <p>{{ book.page_count_label }}</p>
+                  {% endif %}
+                </div>
+              </a>
+            </div>
+          {% endfor %}
+        </div>
+        <button
+          type="button"
+          aria-label="Scroll right"
+          class="hidden absolute -right-4 top-1/2 z-10 -translate-y-1/2 items-center justify-center rounded-full border bg-surface p-1.5 text-text-muted shadow-sm transition hover:text-text"
+          data-scroll-right
+          onclick="this.closest('chip-scroll').querySelector('[data-chip-scroll]').scrollBy({left: 220, behavior: 'smooth'})"
+        >
+          {{ icons::chevron_right("h-5 w-5") }}
+        </button>
+      </chip-scroll>
+    {% else %}
+      <div class="relative">
+        <div
+          class="flex gap-4 overflow-hidden blur-[2px] select-none pointer-events-none"
+          aria-hidden="true"
+        >
+          {% for _ in 0..4 %}
+            <div
+              class="w-[200px] shrink-0 rounded-lg border bg-surface p-4 flex flex-col"
+            >
+              <div class="h-[3.25rem]">
+                <div class="h-4 w-3/4 rounded bg-surface-alt"></div>
+              </div>
+              <div class="mt-2 mb-3 flex justify-center">
+                <div class="h-28 w-20 rounded bg-surface-alt"></div>
+              </div>
+              <div class="flex-1 space-y-2">
+                <div class="h-3 w-full rounded bg-surface-alt"></div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+        <div class="absolute inset-0 z-10 flex items-center justify-center">
+          <span class="text-lg font-semibold text-text-muted"
+            >No books in library</span
+          >
+        </div>
+      </div>
+    {% endif %}
+  </section>
+
+  {% if is_authenticated %}
+    {{ detail::edit_delete_buttons(edit_url, "author", "/api/v1/authors", author.id) }}
+  {% endif %}
+{% endblock %}

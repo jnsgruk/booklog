@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en" data-star-root>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta
+      name="description"
+      content="{% block description %}
+        Self-hosted book tracking — authors, books, and a personal library.
+      {% endblock %}"
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Booklog" />
+    <meta
+      property="og:title"
+      content="{% block og_title %}Booklog{% endblock %}"
+    />
+    <meta
+      property="og:description"
+      content="{% block og_description %}
+        Self-hosted book tracking — authors, books, and a personal library.
+      {% endblock %}"
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <title>{% block title %}Booklog{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/styles.css" />
+    <link
+      rel="icon"
+      id="favicon"
+      type="image/svg+xml"
+      href="/static/favicon-light.svg"
+    />
+    <script>
+      (() => {
+        const stored = localStorage.getItem("theme");
+        const isDark =
+          stored === "dark" ||
+          (!stored && matchMedia("(prefers-color-scheme: dark)").matches);
+        if (isDark) {
+          document.documentElement.setAttribute("data-theme", "dark");
+          document.getElementById("favicon").href = "/static/favicon-dark.svg";
+        }
+      })();
+    </script>
+    <script
+      type="module"
+      src="https://cdn.jsdelivr.net/gh/starfederation/datastar@1.0.0-RC.6/bundles/datastar.js"
+    ></script>
+    <script defer src="/static/js/location.js"></script>
+    <script defer src="/static/js/image-utils.js"></script>
+    <script defer src="/static/js/components/searchable-select.js"></script>
+    <script defer src="/static/js/components/chip-scroll.js"></script>
+
+    <script defer src="/static/js/components/donut-chart.js"></script>
+    <script defer src="/static/js/components/bar-chart.js"></script>
+    <script defer src="/static/js/components/image-upload.js"></script>
+    <script defer src="/static/js/components/photo-capture.js"></script>
+    {% block head %}{% endblock %}
+    <script>
+      const showToast = (msg, ms = 3000) => {
+        const el = document.getElementById("toast-message");
+        if (!el) return;
+        el.textContent = msg;
+        el.parentElement.classList.remove("hidden");
+        clearTimeout(showToast._t);
+        showToast._t = setTimeout(
+          () => el.parentElement.classList.add("hidden"),
+          ms,
+        );
+      };
+      document.addEventListener("DOMContentLoaded", () => {
+        const t = sessionStorage.getItem("toast");
+        if (t) {
+          sessionStorage.removeItem("toast");
+          showToast(t);
+        }
+      });
+    </script>
+    <script>
+      const navigateRow = (event, url) => {
+        if (event.target.closest("a, button")) return;
+        window.location.href = url;
+      };
+    </script>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const mobileQuery = window.matchMedia("(max-width: 767px)");
+        if (!mobileQuery.matches) return;
+
+        const setupInfiniteScroll = () => {
+          document
+            .querySelectorAll("[data-infinite-scroll]")
+            .forEach((container) => {
+              const sentinel = container.querySelector(
+                ".infinite-scroll-sentinel",
+              );
+              if (!sentinel || sentinel.dataset.observed) return;
+              sentinel.dataset.observed = "true";
+
+              const observer = new IntersectionObserver(
+                (entries) => {
+                  entries.forEach((entry) => {
+                    if (!entry.isIntersecting) return;
+
+                    const nextUrl = container.getAttribute("data-next-url");
+                    const targetSelector =
+                      container.getAttribute("data-target");
+                    if (!nextUrl || !targetSelector) {
+                      observer.disconnect();
+                      return;
+                    }
+
+                    observer.disconnect();
+                    sentinel.remove();
+
+                    fetch(nextUrl, {
+                      headers: { "datastar-request": "true" },
+                    })
+                      .then((res) => res.text())
+                      .then((html) => {
+                        const doc = new DOMParser().parseFromString(
+                          html,
+                          "text/html",
+                        );
+                        const newTarget = doc.querySelector(targetSelector);
+                        if (!newTarget) return;
+
+                        // Append new rows to existing tbody
+                        const existingTbody = container.querySelector("tbody");
+                        const newTbody = newTarget.querySelector("tbody");
+                        if (existingTbody && newTbody) {
+                          Array.from(newTbody.children).forEach((row) => {
+                            existingTbody.appendChild(document.adoptNode(row));
+                          });
+                        }
+
+                        // Check if there are more pages
+                        const newContainer = newTarget.querySelector(
+                          "[data-infinite-scroll]",
+                        );
+                        const newNextUrl =
+                          newContainer &&
+                          newContainer.getAttribute("data-next-url");
+                        if (newNextUrl) {
+                          container.setAttribute("data-next-url", newNextUrl);
+                          const newSentinel = document.createElement("div");
+                          newSentinel.className =
+                            "infinite-scroll-sentinel h-4 md:hidden";
+                          newSentinel.setAttribute("aria-hidden", "true");
+                          container.appendChild(newSentinel);
+                          setupInfiniteScroll();
+                        } else {
+                          container.removeAttribute("data-next-url");
+                          container.removeAttribute("data-infinite-scroll");
+                        }
+                      });
+                  });
+                },
+                { rootMargin: "200px" },
+              );
+
+              observer.observe(sentinel);
+            });
+        };
+
+        setupInfiniteScroll();
+
+        const bodyObserver = new MutationObserver(() => {
+          setupInfiniteScroll();
+        });
+        bodyObserver.observe(document.body, { childList: true, subtree: true });
+      });
+    </script>
+  </head>
+  <body class="min-h-screen bg-page text-text">
+    {% if is_impersonating %}
+      <div
+        class="impersonation-banner sticky top-0 z-40 border-b border-warning-border bg-warning-bg"
+      >
+        <div
+          class="mx-auto flex max-w-5xl items-center justify-between gap-3 px-6 py-2"
+        >
+          <div
+            class="flex items-center gap-2 text-sm font-medium text-warning-text"
+          >
+            <svg
+              class="h-4 w-4 shrink-0"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path d="M10 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" />
+              <path
+                fill-rule="evenodd"
+                d="M.664 10.59a1.651 1.651 0 0 1 0-1.186A10.004 10.004 0 0 1 10 3c4.257 0 7.893 2.66 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0 1 10 17c-4.257 0-7.893-2.66-9.336-6.41ZM14 10a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            <span>Viewing as <strong>{{ impersonated_username }}</strong></span>
+          </div>
+          <form method="post" action="/api/v1/admin/stop-impersonation">
+            <button
+              type="submit"
+              class="inline-flex items-center gap-1.5 rounded-md border border-warning-border px-3 py-1 text-sm font-medium text-warning-text transition hover:bg-warning-border/20"
+            >
+              Stop Impersonating
+            </button>
+          </form>
+        </div>
+      </div>
+    {% endif %}
+    <main
+      class="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 pb-4 md:py-10"
+    >
+      {% include "partials/nav.html" %}
+      {% block content %}
+      {% endblock %}
+      <footer
+        class="mt-8 text-center text-xs tracking-widest text-text-muted small-caps"
+      >
+        <p>
+          B{ook}log by
+          <a
+            href="https://jnsgr.uk"
+            class="text-text-muted hover:text-accent transition"
+            target="_blank"
+            rel="noreferrer noopener"
+            >jnsgruk</a
+          >
+          ·
+          <a
+            href="https://github.com/jnsgruk/booklog/commit/{{ version_info.commit }}"
+            class="text-text-muted hover:text-accent transition"
+            target="_blank"
+            rel="noreferrer noopener"
+            >{{ version_info.commit }}</a
+          >
+        </p>
+      </footer>
+    </main>
+
+    <div
+      id="toast-container"
+      class="fixed bottom-4 left-1/2 -translate-x-1/2 z-50"
+    >
+      <div
+        class="hidden rounded-lg border border-success-border bg-surface px-4 py-3 text-sm font-medium text-success-text shadow-lg"
+        role="status"
+        aria-live="polite"
+      >
+        <span id="toast-message"></span>
+      </div>
+    </div>
+  </body>
+</html>

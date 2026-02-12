@@ -1,0 +1,370 @@
+{% import "partials/icons.html" as icons %}
+
+<!-- Hidden inputs for submission (always present, bound to signals) -->
+<input type="hidden" name="scan_image" id="scan-image-save" />
+<input type="hidden" name="shelf" data-attr:value="$_scanShelf" />
+<input
+  type="hidden"
+  name="start_reading"
+  data-attr:value="$_scanShelf === 'library' ? 'true' : 'false'"
+/>
+<input type="hidden" name="matched_book_id" data-attr:value="$_matchedBookId" />
+<input type="hidden" name="author_name" data-attr:value="$_authorName" />
+<input type="hidden" name="book_title" data-attr:value="$_bookTitle" />
+<input type="hidden" name="book_isbn" data-attr:value="$_bookIsbn" />
+<input
+  type="hidden"
+  name="book_description"
+  data-attr:value="$_bookDescription"
+/>
+<input type="hidden" name="book_pages" data-attr:value="$_bookPages" />
+<input type="hidden" name="book_year" data-attr:value="$_bookYear" />
+<input type="hidden" name="book_publisher" data-attr:value="$_bookPublisher" />
+<input type="hidden" name="book_language" data-attr:value="$_bookLanguage" />
+<input
+  type="hidden"
+  name="book_primary_genre_id"
+  data-attr:value="$_bookPrimaryGenreId"
+/>
+<input
+  type="hidden"
+  name="book_primary_genre_name"
+  data-attr:value="$_bookPrimaryGenre"
+/>
+<input
+  type="hidden"
+  name="book_secondary_genre_id"
+  data-attr:value="$_bookSecondaryGenreId"
+/>
+<input
+  type="hidden"
+  name="book_secondary_genre_name"
+  data-attr:value="$_bookSecondaryGenre"
+/>
+<input
+  type="hidden"
+  name="book_club"
+  data-attr:value="$_bookClub ? 'true' : 'false'"
+/>
+<input
+  type="hidden"
+  name="selected_cover_id"
+  data-attr:value="$_selectedCover !== 'photo' && $_selectedCover !== 'none' ? $_selectedCover : ''"
+/>
+
+<!-- Cover Image picker -->
+<div data-show="$_hasScanPhoto || $_cover1" style="display:none">
+  <h3 class="text-base font-semibold text-text">Cover Image</h3>
+  <p class="mt-1 text-sm text-text-secondary">
+    Select a cover image for this book.
+  </p>
+  <div class="mt-3 flex gap-3 overflow-x-auto scrollbar-hide pb-1">
+    <!-- Captured photo -->
+    <button
+      type="button"
+      data-show="$_hasScanPhoto"
+      style="display:none"
+      data-on:click="$_selectedCover = 'photo'"
+      data-attr:class="'flex shrink-0 flex-col items-center gap-1.5 rounded-lg border-2 p-2 transition cursor-pointer ' + ($_selectedCover === 'photo' ? 'border-accent bg-accent/5' : 'border-transparent hover:border-accent/30')"
+    >
+      <img
+        id="scan-photo-preview"
+        alt=""
+        class="h-28 w-auto rounded object-contain"
+      />
+      <span class="text-xs text-text-muted">Captured</span>
+    </button>
+    <!-- Suggestion 1 -->
+    <button
+      type="button"
+      data-show="$_cover1"
+      style="display:none"
+      data-on:click="$_selectedCover = $_cover1"
+      data-attr:class="'flex shrink-0 flex-col items-center gap-1.5 rounded-lg border-2 p-2 transition cursor-pointer ' + ($_selectedCover === $_cover1 ? 'border-accent bg-accent/5' : 'border-transparent hover:border-accent/30')"
+    >
+      <img
+        data-attr:src="$_cover1 ? '/api/v1/cover-suggestions/' + $_cover1 + '/thumbnail' : ''"
+        alt=""
+        class="h-28 w-auto rounded object-contain"
+      />
+    </button>
+    <!-- Suggestion 2 -->
+    <button
+      type="button"
+      data-show="$_cover2"
+      style="display:none"
+      data-on:click="$_selectedCover = $_cover2"
+      data-attr:class="'flex shrink-0 flex-col items-center gap-1.5 rounded-lg border-2 p-2 transition cursor-pointer ' + ($_selectedCover === $_cover2 ? 'border-accent bg-accent/5' : 'border-transparent hover:border-accent/30')"
+    >
+      <img
+        data-attr:src="$_cover2 ? '/api/v1/cover-suggestions/' + $_cover2 + '/thumbnail' : ''"
+        alt=""
+        class="h-28 w-auto rounded object-contain"
+      />
+    </button>
+    <!-- Suggestion 3 -->
+    <button
+      type="button"
+      data-show="$_cover3"
+      style="display:none"
+      data-on:click="$_selectedCover = $_cover3"
+      data-attr:class="'flex shrink-0 flex-col items-center gap-1.5 rounded-lg border-2 p-2 transition cursor-pointer ' + ($_selectedCover === $_cover3 ? 'border-accent bg-accent/5' : 'border-transparent hover:border-accent/30')"
+    >
+      <img
+        data-attr:src="$_cover3 ? '/api/v1/cover-suggestions/' + $_cover3 + '/thumbnail' : ''"
+        alt=""
+        class="h-28 w-auto rounded object-contain"
+      />
+    </button>
+    <!-- Suggestion 4 -->
+    <button
+      type="button"
+      data-show="$_cover4"
+      style="display:none"
+      data-on:click="$_selectedCover = $_cover4"
+      data-attr:class="'flex shrink-0 flex-col items-center gap-1.5 rounded-lg border-2 p-2 transition cursor-pointer ' + ($_selectedCover === $_cover4 ? 'border-accent bg-accent/5' : 'border-transparent hover:border-accent/30')"
+    >
+      <img
+        data-attr:src="$_cover4 ? '/api/v1/cover-suggestions/' + $_cover4 + '/thumbnail' : ''"
+        alt=""
+        class="h-28 w-auto rounded object-contain"
+      />
+    </button>
+    <!-- Suggestion 5 -->
+    <button
+      type="button"
+      data-show="$_cover5"
+      style="display:none"
+      data-on:click="$_selectedCover = $_cover5"
+      data-attr:class="'flex shrink-0 flex-col items-center gap-1.5 rounded-lg border-2 p-2 transition cursor-pointer ' + ($_selectedCover === $_cover5 ? 'border-accent bg-accent/5' : 'border-transparent hover:border-accent/30')"
+    >
+      <img
+        data-attr:src="$_cover5 ? '/api/v1/cover-suggestions/' + $_cover5 + '/thumbnail' : ''"
+        alt=""
+        class="h-28 w-auto rounded object-contain"
+      />
+    </button>
+    <!-- No cover option -->
+    <button
+      type="button"
+      data-on:click="$_selectedCover = 'none'"
+      data-attr:class="'flex shrink-0 flex-col items-center gap-1.5 rounded-lg border-2 p-2 transition cursor-pointer ' + ($_selectedCover === 'none' ? 'border-accent bg-accent/5' : 'border-transparent hover:border-accent/30')"
+    >
+      <div
+        class="flex h-28 w-20 items-center justify-center rounded bg-surface-alt"
+      >
+        {{ icons::x_mark("h-6 w-6 text-text-muted") }}
+      </div>
+      <span class="text-xs text-text-muted">None</span>
+    </button>
+  </div>
+</div>
+
+<!-- Author: card (matched) -->
+<div data-show="$_matchedAuthorId">
+  <h3 class="text-base font-semibold text-text">Author</h3>
+  <div
+    class="mt-2 rounded-lg border bg-surface px-4 py-3 flex items-center justify-between cursor-pointer"
+    data-on:click="$_matchedAuthorId = ''; $_matchedBookId = ''"
+  >
+    <div class="flex items-center gap-2">
+      {{ icons::pen("h-4 w-4 text-accent shrink-0") }}
+      <span class="font-medium text-text" data-text="$_authorName"></span>
+    </div>
+    <button
+      type="button"
+      class="inline-flex items-center gap-1 text-xs text-text-muted hover:text-text"
+      data-on:click="$_matchedAuthorId = ''; $_matchedBookId = ''"
+    >
+      {{ icons::pencil("h-3 w-3") }} Change
+    </button>
+  </div>
+</div>
+<!-- Author: form (not matched) -->
+<div data-show="!$_matchedAuthorId" style="display:none">
+  <h3 class="text-base font-semibold text-text">Author</h3>
+  <p class="mt-1 text-sm text-text-secondary">
+    If this author already exists, it will be matched automatically.
+  </p>
+  <div class="mt-4 grid gap-4 sm:grid-cols-2">
+    <label class="flex flex-col gap-1 text-sm">
+      <span class="text-text">Name *</span>
+      <input
+        type="text"
+        class="input-field"
+        placeholder="Jane Austen"
+        data-bind:_author-name
+      />
+    </label>
+  </div>
+</div>
+
+<!-- Book: card (matched) -->
+<div data-show="$_matchedBookId">
+  <h3 class="text-base font-semibold text-text">Book</h3>
+  <div
+    class="mt-2 rounded-lg border bg-surface px-4 py-3 flex items-center justify-between cursor-pointer"
+    data-on:click="$_matchedBookId = ''"
+  >
+    <div class="flex items-center gap-2">
+      {{ icons::book("h-4 w-4 text-accent shrink-0") }}
+      <span class="font-medium text-text" data-text="$_bookTitle"></span>
+    </div>
+    <button
+      type="button"
+      class="inline-flex items-center gap-1 text-xs text-text-muted hover:text-text"
+      data-on:click="$_matchedBookId = ''"
+    >
+      {{ icons::pencil("h-3 w-3") }} Change
+    </button>
+  </div>
+</div>
+<!-- Book: form (not matched) -->
+<div data-show="!$_matchedBookId" style="display:none">
+  <h3 class="text-base font-semibold text-text">Book</h3>
+  <p class="mt-1 text-sm text-text-secondary">Details about this book.</p>
+  <div class="mt-4 grid gap-4 sm:grid-cols-2">
+    <label class="flex flex-col gap-1 text-sm">
+      <span class="text-text">Title *</span>
+      <input
+        type="text"
+        class="input-field"
+        placeholder="Pride and Prejudice"
+        data-bind:_book-title
+      />
+    </label>
+    <label class="flex flex-col gap-1 text-sm">
+      <span class="text-text">ISBN</span>
+      <input
+        type="text"
+        class="input-field"
+        placeholder="978-0-14-028329-7"
+        data-bind:_book-isbn
+      />
+    </label>
+    <label class="flex flex-col gap-1 text-sm">
+      <span class="text-text">Pages</span>
+      <input
+        type="number"
+        class="input-field"
+        placeholder="432"
+        data-bind:_book-pages
+      />
+    </label>
+    <label class="flex flex-col gap-1 text-sm">
+      <span class="text-text">Year Published</span>
+      <input
+        type="number"
+        class="input-field"
+        placeholder="1813"
+        data-bind:_book-year
+      />
+    </label>
+    <label class="flex flex-col gap-1 text-sm">
+      <span class="text-text">Publisher</span>
+      <input
+        type="text"
+        class="input-field"
+        placeholder="Penguin Classics"
+        data-bind:_book-publisher
+      />
+    </label>
+    <label class="flex flex-col gap-1 text-sm">
+      <span class="text-text">Language</span>
+      <input
+        type="text"
+        class="input-field"
+        placeholder="English"
+        data-bind:_book-language
+      />
+    </label>
+    <label class="flex flex-col gap-1 text-sm">
+      <span class="text-text">Primary Genre</span>
+      <input
+        type="text"
+        class="input-field"
+        placeholder="Fiction"
+        data-bind:_book-primary-genre
+        data-on:input="$_bookPrimaryGenreId = ''"
+      />
+    </label>
+    <label class="flex flex-col gap-1 text-sm">
+      <span class="text-text">Secondary Genre</span>
+      <input
+        type="text"
+        class="input-field"
+        placeholder="Romance"
+        data-bind:_book-secondary-genre
+        data-on:input="$_bookSecondaryGenreId = ''"
+      />
+    </label>
+    <label class="flex flex-col gap-1 text-sm sm:col-span-2">
+      <span class="text-text">Description</span>
+      <textarea
+        rows="3"
+        class="input-field"
+        placeholder="A brief description of the book"
+        data-bind:_book-description
+      ></textarea>
+    </label>
+  </div>
+</div>
+
+<label
+  class="flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 transition hover:border-accent/40"
+>
+  <input type="checkbox" class="peer sr-only" data-bind:_book-club />
+  <div class="toggle-track"></div>
+  <span class="text-sm font-medium text-text-secondary">Book club pick</span>
+</label>
+
+<p
+  data-show="$_scanError"
+  data-text="$_scanError"
+  style="display:none"
+  class="text-sm text-error"
+  role="alert"
+></p>
+<div
+  data-show="$_scanSubmitting"
+  style="display:none"
+  class="flex items-center gap-3 text-sm text-accent"
+>
+  {{ icons::spinner("h-5 w-5") }} Saving&hellip;
+</div>
+<div
+  data-show="!$_scanSubmitting"
+  class="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end"
+>
+  <button
+    type="button"
+    data-on:click="$_scanExtracted = false; $_matchedAuthorId = ''; $_matchedBookId = ''"
+    class="inline-flex w-full items-center justify-center gap-2 rounded-md border px-4 py-2 text-sm font-medium text-text transition hover:bg-surface-alt sm:w-auto sm:justify-start"
+  >
+    {{ icons::x_mark("h-4 w-4") }} Cancel
+  </button>
+  <!-- Both matched: nothing to create, just add to shelf -->
+  <p
+    data-show="$_matchedBookId"
+    style="display:none"
+    class="text-sm text-text-secondary sm:flex-1"
+  >
+    This book already exists.
+  </p>
+  <!-- Add to Wishlist button -->
+  <button
+    type="submit"
+    data-on:click="$_scanShelf = 'wishlist'"
+    class="inline-flex w-full items-center justify-center gap-2 rounded-md border px-4 py-2 text-sm font-medium text-accent transition hover:text-text hover:bg-surface-alt sm:w-auto sm:justify-start"
+  >
+    {{ icons::heart("h-4 w-4") }} Add to Wishlist
+  </button>
+  <!-- Add to Library button -->
+  <button
+    type="submit"
+    data-on:click="$_scanShelf = 'library'"
+    class="inline-flex w-full items-center justify-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-semibold text-accent-text transition hover:bg-accent-hover sm:w-auto sm:justify-start"
+  >
+    {{ icons::bookmark("h-4 w-4") }} Add to Library
+  </button>
+</div>

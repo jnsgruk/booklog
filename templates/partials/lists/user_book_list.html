@@ -1,0 +1,88 @@
+{% import "partials/icons.html" as icons %}
+{% import "partials/lists/table.html" as table %}
+
+<section
+  id="user-book-list"
+  class="rounded-lg border bg-surface"
+  data-infinite-scroll
+  {% if user_books.has_next() %}
+    data-next-url="{{ navigator.fragment_page_href(user_books.next_page().unwrap()) }}"
+  {% endif %}
+  data-target="#user-book-list"
+>
+  {{ table::search_header(navigator, "#user-book-list") }}
+  <div class="responsive-table">
+    <table class="w-full text-left text-sm">
+      <thead
+        class="border-b text-xs font-semibold uppercase tracking-wide text-text-muted"
+      >
+        <tr>
+          {{ table::sortable_header("Added", "created_at", navigator, "#user-book-list") }}
+          {{ table::sortable_header("Title", "title", navigator, "#user-book-list") }}
+          {{ table::sortable_header("Genre", "genre", navigator, "#user-book-list", "hidden md:table-cell") }}
+          {{ table::sortable_header("Club", "club", navigator, "#user-book-list", "hidden md:table-cell") }}
+          {% if shelf != "wishlist" %}
+            {{ table::sortable_header("Status", "status", navigator, "#user-book-list", "hidden md:table-cell") }}
+          {% endif %}
+          {% if shelf != "wishlist" %}
+            <th scope="col" class="px-4 py-3 hidden md:table-cell">Dates</th>
+          {% endif %}
+        </tr>
+      </thead>
+      <tbody class="divide-y">
+        {% for ub in user_books.items %}
+          <tr
+            class="cursor-pointer transition hover:bg-surface-alt"
+            onclick="navigateRow(event, '{{ ub.detail_path }}')"
+          >
+            <td class="px-4 py-3 text-text-muted whitespace-nowrap">
+              <time>{{ ub.created_date }}</time>
+            </td>
+            <td class="px-4 py-3">
+              <a
+                href="{{ ub.detail_path }}"
+                class="font-medium text-accent hover:text-accent-hover transition"
+                >{{ ub.title }}</a
+              >
+              <p class="text-xs text-text-muted">{{ ub.author_label }}</p>
+            </td>
+            <td class="px-4 py-3 hidden md:table-cell text-text-secondary">
+              {{ ub.genre }}
+            </td>
+            <td class="px-4 py-3 hidden md:table-cell text-text-secondary">
+              {% if ub.book_club %}
+                <span class="pill pill-success text-2xs">Book Club</span>
+              {% endif %}
+            </td>
+            {% if shelf != "wishlist" %}
+              <td class="px-4 py-3 hidden md:table-cell text-text-secondary">
+                {{ ub.reading_status }}
+              </td>
+            {% endif %}
+            {% if shelf != "wishlist" %}
+              <td
+                class="px-4 py-3 hidden md:table-cell text-text-secondary whitespace-nowrap"
+              >
+                {% if !ub.reading_started.is_empty() || !ub.reading_finished.is_empty() %}
+                  <p>{{ ub.reading_started }}</p>
+                  {% if !ub.reading_finished.is_empty() %}
+                    <p class="text-xs text-text-muted">
+                      {{ ub.reading_finished }}
+                    </p>
+                  {% endif %}
+                {% endif %}
+              </td>
+            {% endif %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {{ table::pagination_header(user_books, navigator, "#user-book-list") }}
+  {% if user_books.has_next() %}
+    <div
+      class="infinite-scroll-sentinel h-4 md:hidden"
+      aria-hidden="true"
+    ></div>
+  {% endif %}
+</section>

@@ -1,0 +1,675 @@
+{% extends "base.html" %} {% import "partials/icons.html" as icons %}
+{% import "partials/image_section.html" as img %}
+{% import "partials/detail_cards.html" as cards %}
+{% block title %}Booklog · Add{% endblock %}
+
+{% block content %}
+  <section
+    data-signals:_add-submitting="false"
+    data-signals:_author-name="''"
+    data-signals:_genre-name="''"
+    data-signals:_book-title="''"
+    data-signals:_book-isbn="''"
+    data-signals:_book-pages="''"
+    data-signals:_book-year="''"
+    data-signals:_book-publisher="''"
+    data-signals:_book-language="''"
+    data-signals:_book-primary-genre-id="''"
+    data-signals:_book-secondary-genre-id="''"
+    data-signals:_book-description="''"
+    data-signals:_reading-status="'{% if selected_status.is_empty() %}on_shelf{% else %}{{ selected_status }}{% endif %}'"
+    data-signals:_rating="0"
+    data-signals:_qr-loved-it="false"
+    data-signals:_qr-page-turner="false"
+    data-signals:_qr-thought-provoking="false"
+    data-signals:_qr-couldnt-put-down="false"
+    data-signals:_qr-great-characters="false"
+    data-signals:_qr-funny="false"
+    data-signals:_qr-moving="false"
+    data-signals:_qr-laughed-out-loud="false"
+    data-signals:_qr-relatable="false"
+    data-signals:_qr-quick-read="false"
+    data-signals:_qr-slow-burn="false"
+    data-signals:_qr-dense="false"
+    data-signals:_qr-predictable-plot="false"
+    data-signals:_qr-disappointing-ending="false"
+    data-signals:_qr-unrelatable-characters="false"
+    data-signals:_qr-forgettable="false"
+    data-signals:_qr-too-long="false"
+    data-signals:_qr-odd-pov="false"
+    data-signals:_qr-overrated="false"
+  >
+    <header class="flex flex-col gap-2 mb-6">
+      <h1 class="text-3xl font-semibold">Add</h1>
+      <p class="max-w-2xl text-sm text-text-secondary">
+        Add new book data manually.
+      </p>
+    </header>
+
+    <!-- Entity type selector -->
+    <div class="mb-4">{% include "partials/tab_bar.html" %}</div>
+
+    <!-- ========== AUTHOR FORM ========== -->
+    <div
+      data-show="$_addType === 'author'"
+      style="display:none"
+      class="rounded-lg border bg-surface p-5"
+    >
+      <div>
+        <h3 class="text-lg font-semibold text-text">New Author</h3>
+        <p class="mt-1 text-sm text-text-secondary">Enter author details.</p>
+      </div>
+      <form
+        method="post"
+        action="/api/v1/authors"
+        class="mt-4 flex flex-col gap-4 pb-16 md:pb-0"
+        onsubmit="sessionStorage.setItem('toast', 'Author added')"
+      >
+        <div class="grid gap-4 sm:grid-cols-2">
+          <label class="flex flex-col gap-1 text-sm">
+            <span
+              class="text-xs font-semibold text-text-muted uppercase tracking-wide"
+              >Name*</span
+            >
+            <input
+              type="text"
+              name="name"
+              required
+              aria-required="true"
+              class="input-field"
+              placeholder="Ursula K. Le Guin"
+              data-bind:_author-name
+            />
+          </label>
+        </div>
+        {{ img::deferred_upload("author-image", "Add image (optional)") }}
+        <div class="sticky-submit flex flex-col gap-2">
+          <button
+            type="submit"
+            class="inline-flex w-full items-center justify-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-semibold text-accent-text transition hover:bg-accent-hover"
+          >
+            {{ icons::plus("h-4 w-4") }} Save Author
+          </button>
+          <button
+            type="button"
+            onclick="history.back()"
+            class="inline-flex w-full items-center justify-center gap-2 rounded-md border px-4 py-2 text-sm font-medium text-text-secondary transition hover:bg-surface-alt"
+          >
+            {{ icons::x_mark("h-4 w-4") }} Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- ========== GENRE FORM ========== -->
+    <div
+      data-show="$_addType === 'genre'"
+      style="display:none"
+      class="rounded-lg border bg-surface p-5"
+    >
+      <div>
+        <h3 class="text-lg font-semibold text-text">New Genre</h3>
+        <p class="mt-1 text-sm text-text-secondary">Enter genre details.</p>
+      </div>
+      <form
+        method="post"
+        action="/api/v1/genres"
+        class="mt-4 flex flex-col gap-4 pb-16 md:pb-0"
+        onsubmit="sessionStorage.setItem('toast', 'Genre added')"
+      >
+        <div class="grid gap-4 sm:grid-cols-2">
+          <label class="flex flex-col gap-1 text-sm">
+            <span
+              class="text-xs font-semibold text-text-muted uppercase tracking-wide"
+              >Name*</span
+            >
+            <input
+              type="text"
+              name="name"
+              required
+              aria-required="true"
+              class="input-field"
+              placeholder="Science Fiction"
+              data-bind:_genre-name
+            />
+          </label>
+        </div>
+        <div class="sticky-submit flex flex-col gap-2">
+          <button
+            type="submit"
+            class="inline-flex w-full items-center justify-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-semibold text-accent-text transition hover:bg-accent-hover"
+          >
+            {{ icons::plus("h-4 w-4") }} Save Genre
+          </button>
+          <button
+            type="button"
+            onclick="history.back()"
+            class="inline-flex w-full items-center justify-center gap-2 rounded-md border px-4 py-2 text-sm font-medium text-text-secondary transition hover:bg-surface-alt"
+          >
+            {{ icons::x_mark("h-4 w-4") }} Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- ========== BOOK FORM ========== -->
+    <div
+      data-show="$_addType === 'book'"
+      style="display:none"
+      class="rounded-lg border bg-surface p-5"
+    >
+      {% if author_options.is_empty() %}
+        <div class="text-sm text-text-secondary">
+          <h3 class="text-lg font-semibold text-text">Add an author first</h3>
+          <p class="mt-2">
+            Books need an author.
+            <button
+              type="button"
+              class="font-medium text-accent hover:underline"
+              data-on:click="$_addType = 'author'"
+            >
+              Add an author
+            </button>
+            to enable this form.
+          </p>
+        </div>
+      {% else %}
+        <div>
+          <h3 class="text-lg font-semibold text-text">New Book</h3>
+          <p class="mt-1 text-sm text-text-secondary">
+            Enter the book details.
+          </p>
+        </div>
+        <form
+          method="post"
+          action="/api/v1/books"
+          class="mt-4 flex flex-col gap-4 pb-16 md:pb-0"
+          onsubmit="sessionStorage.setItem('toast', 'Book added')"
+        >
+          <div class="flex flex-col gap-1 text-sm">
+            <span
+              class="text-xs font-semibold text-text-muted uppercase tracking-wide"
+              >Author*</span
+            >
+            <searchable-select
+              name="author_id"
+              placeholder="Type to search authors&hellip;"
+            >
+              {% for author in author_options %}
+                <button
+                  type="button"
+                  value="{{ author.id }}"
+                  data-display="{{ author.name }}"
+                  class="w-full px-3 py-2 text-left text-sm hover:bg-surface-alt transition"
+                >
+                  <span class="font-medium text-text">{{ author.name }}</span>
+                </button>
+              {% endfor %}
+            </searchable-select>
+          </div>
+          <label class="flex flex-col gap-1 text-sm">
+            <span
+              class="text-xs font-semibold text-text-muted uppercase tracking-wide"
+              >Title*</span
+            >
+            <input
+              type="text"
+              name="title"
+              required
+              aria-required="true"
+              class="input-field"
+              placeholder="The Left Hand of Darkness"
+              data-bind:_book-title
+            />
+          </label>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <label class="flex flex-col gap-1 text-sm">
+              <span
+                class="text-xs font-semibold text-text-muted uppercase tracking-wide"
+                >ISBN</span
+              >
+              <input
+                type="text"
+                name="isbn"
+                class="input-field"
+                placeholder="978-0-441-47812-5"
+                data-bind:_book-isbn
+              />
+            </label>
+            <label class="flex flex-col gap-1 text-sm">
+              <span
+                class="text-xs font-semibold text-text-muted uppercase tracking-wide"
+                >Pages</span
+              >
+              <input
+                type="number"
+                name="page_count"
+                class="input-field"
+                placeholder="304"
+                data-bind:_book-pages
+              />
+            </label>
+            <label class="flex flex-col gap-1 text-sm">
+              <span
+                class="text-xs font-semibold text-text-muted uppercase tracking-wide"
+                >Year Published</span
+              >
+              <input
+                type="number"
+                name="year_published"
+                class="input-field"
+                placeholder="1969"
+                data-bind:_book-year
+              />
+            </label>
+            <label class="flex flex-col gap-1 text-sm">
+              <span
+                class="text-xs font-semibold text-text-muted uppercase tracking-wide"
+                >Publisher</span
+              >
+              <input
+                type="text"
+                name="publisher"
+                class="input-field"
+                placeholder="Ace Books"
+                data-bind:_book-publisher
+              />
+            </label>
+            <label class="flex flex-col gap-1 text-sm">
+              <span
+                class="text-xs font-semibold text-text-muted uppercase tracking-wide"
+                >Language</span
+              >
+              <input
+                type="text"
+                name="language"
+                class="input-field"
+                placeholder="English"
+                data-bind:_book-language
+              />
+            </label>
+          </div>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div class="flex flex-col gap-1 text-sm">
+              <span
+                class="text-xs font-semibold text-text-muted uppercase tracking-wide"
+                >Primary Genre</span
+              >
+              <searchable-select
+                name="primary_genre_id"
+                placeholder="Type to search genres&hellip;"
+                creatable
+              >
+                {% for genre in genre_options %}
+                  <button
+                    type="button"
+                    value="{{ genre.id }}"
+                    data-display="{{ genre.name }}"
+                    class="w-full px-3 py-2 text-left text-sm hover:bg-surface-alt transition"
+                  >
+                    <span class="font-medium text-text">{{ genre.name }}</span>
+                  </button>
+                {% endfor %}
+              </searchable-select>
+            </div>
+            <div class="flex flex-col gap-1 text-sm">
+              <span
+                class="text-xs font-semibold text-text-muted uppercase tracking-wide"
+                >Secondary Genre</span
+              >
+              <searchable-select
+                name="secondary_genre_id"
+                placeholder="Type to search genres&hellip;"
+                creatable
+              >
+                {% for genre in genre_options %}
+                  <button
+                    type="button"
+                    value="{{ genre.id }}"
+                    data-display="{{ genre.name }}"
+                    class="w-full px-3 py-2 text-left text-sm hover:bg-surface-alt transition"
+                  >
+                    <span class="font-medium text-text">{{ genre.name }}</span>
+                  </button>
+                {% endfor %}
+              </searchable-select>
+            </div>
+          </div>
+          <label class="flex flex-col gap-1 text-sm">
+            <span
+              class="text-xs font-semibold text-text-muted uppercase tracking-wide"
+              >Description</span
+            >
+            <textarea
+              name="description"
+              rows="3"
+              class="input-field"
+              placeholder="A brief description of the book"
+              data-bind:_book-description
+            ></textarea>
+          </label>
+          {{ img::deferred_upload("book-image", "Add cover image (optional)") }}
+          <div class="sticky-submit flex flex-col gap-2">
+            <button
+              type="submit"
+              class="inline-flex w-full items-center justify-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-semibold text-accent-text transition hover:bg-accent-hover"
+            >
+              {{ icons::plus("h-4 w-4") }} Save Book
+            </button>
+            <button
+              type="button"
+              onclick="history.back()"
+              class="inline-flex w-full items-center justify-center gap-2 rounded-md border px-4 py-2 text-sm font-medium text-text-secondary transition hover:bg-surface-alt"
+            >
+              {{ icons::x_mark("h-4 w-4") }} Cancel
+            </button>
+          </div>
+        </form>
+      {% endif %}
+    </div>
+
+    <!-- ========== READING FORM ========== -->
+    <div
+      data-show="$_addType === 'reading'"
+      style="display:none"
+      class="rounded-lg border bg-surface p-5"
+    >
+      {% if book_options.is_empty() %}
+        <div class="text-sm text-text-secondary">
+          <h3 class="text-lg font-semibold text-text">Add a book first</h3>
+          <p class="mt-2">
+            A book is needed first.
+            <button
+              type="button"
+              class="font-medium text-accent hover:underline"
+              data-on:click="$_addType = 'book'"
+            >
+              Add a book
+            </button>
+            to enable this form.
+          </p>
+        </div>
+      {% else %}
+        <div>
+          <h3 class="text-lg font-semibold text-text">Add to Library</h3>
+          <p class="mt-1 text-sm text-text-secondary">
+            Log a book in the library.
+          </p>
+        </div>
+        <form
+          method="post"
+          action="/api/v1/readings"
+          class="mt-4 flex flex-col gap-4 pb-16 md:pb-0"
+          onsubmit="sessionStorage.setItem('toast', 'Added to library')"
+        >
+          <input type="hidden" name="rating" data-bind:_rating />
+          <div class="flex flex-col gap-1 text-sm">
+            <span
+              class="text-xs font-semibold text-text-muted uppercase tracking-wide"
+              >Book*</span
+            >
+            <searchable-select
+              name="book_id"
+              placeholder="Type to search books&hellip;"
+              {% if !selected_book_id.is_empty() %}initial-value="{{ selected_book_id }}"{% endif %}
+            >
+              {% for book in book_options %}
+                <button
+                  type="button"
+                  value="{{ book.id }}"
+                  data-display="{{ book.label }}"
+                  class="w-full px-3 py-2 text-left text-sm hover:bg-surface-alt transition"
+                >
+                  <span class="font-medium text-text">{{ book.title }}</span>
+                  <span class="ml-2 text-xs text-text-muted"
+                    >{{ book.author_label }}</span
+                  >
+                </button>
+              {% endfor %}
+            </searchable-select>
+          </div>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <label class="flex flex-col gap-1 text-sm">
+              <span
+                class="text-xs font-semibold text-text-muted uppercase tracking-wide"
+                >Status*</span
+              >
+              <select
+                name="status"
+                required
+                aria-required="true"
+                class="input-field"
+                data-bind:_reading-status
+              >
+                <option value="on_shelf" selected>On Shelf</option>
+                <option value="reading">Reading</option>
+                <option value="read">Read</option>
+                <option value="abandoned">Abandoned</option>
+              </select>
+            </label>
+            <label
+              data-show="$_readingStatus !== 'on_shelf'"
+              style="display:none"
+              class="flex flex-col gap-1 text-sm"
+            >
+              <span
+                class="text-xs font-semibold text-text-muted uppercase tracking-wide"
+                >Format</span
+              >
+              <select name="format" class="input-field">
+                <option value="" disabled selected>Select format</option>
+                <option value="physical">Physical</option>
+                <option value="ereader">eReader</option>
+                <option value="audiobook">Audiobook</option>
+                <option value="not_owned">Not Owned</option>
+              </select>
+            </label>
+          </div>
+          <div
+            data-show="$_readingStatus !== 'on_shelf'"
+            style="display:none"
+            class="flex flex-col gap-4"
+          >
+            <div class="grid gap-4 sm:grid-cols-2">
+              <label class="flex flex-col gap-1 text-sm">
+                <span
+                  class="text-xs font-semibold text-text-muted uppercase tracking-wide"
+                  >Started</span
+                >
+                <input
+                  type="date"
+                  name="started_at"
+                  class="input-field"
+                  {% if selected_status == "reading" %}value="{{ today }}"{% endif %}
+                />
+              </label>
+              <label class="flex flex-col gap-1 text-sm">
+                <span
+                  class="text-xs font-semibold text-text-muted uppercase tracking-wide"
+                  >Finished</span
+                >
+                <input type="date" name="finished_at" class="input-field" />
+              </label>
+            </div>
+            {{ cards::star_rating() }}
+            <div>
+              <span
+                class="text-xs font-semibold text-text-muted uppercase tracking-wide"
+                >Review</span
+              >
+              <div class="mt-2 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  data-on:click="$_qrLovedIt = !$_qrLovedIt"
+                  data-attr:class="$_qrLovedIt ? 'pill pill-success cursor-pointer select-none transition' : 'pill pill-muted cursor-pointer select-none transition'"
+                >
+                  Loved it
+                </button>
+                <button
+                  type="button"
+                  data-on:click="$_qrPageTurner = !$_qrPageTurner"
+                  data-attr:class="$_qrPageTurner ? 'pill pill-success cursor-pointer select-none transition' : 'pill pill-muted cursor-pointer select-none transition'"
+                >
+                  Page-turner
+                </button>
+                <button
+                  type="button"
+                  data-on:click="$_qrThoughtProvoking = !$_qrThoughtProvoking"
+                  data-attr:class="$_qrThoughtProvoking ? 'pill pill-success cursor-pointer select-none transition' : 'pill pill-muted cursor-pointer select-none transition'"
+                >
+                  Thought-provoking
+                </button>
+                <button
+                  type="button"
+                  data-on:click="$_qrCouldntPutDown = !$_qrCouldntPutDown"
+                  data-attr:class="$_qrCouldntPutDown ? 'pill pill-success cursor-pointer select-none transition' : 'pill pill-muted cursor-pointer select-none transition'"
+                >
+                  Couldn't put down
+                </button>
+                <button
+                  type="button"
+                  data-on:click="$_qrGreatCharacters = !$_qrGreatCharacters"
+                  data-attr:class="$_qrGreatCharacters ? 'pill pill-success cursor-pointer select-none transition' : 'pill pill-muted cursor-pointer select-none transition'"
+                >
+                  Great characters
+                </button>
+                <button
+                  type="button"
+                  data-on:click="$_qrFunny = !$_qrFunny"
+                  data-attr:class="$_qrFunny ? 'pill pill-success cursor-pointer select-none transition' : 'pill pill-muted cursor-pointer select-none transition'"
+                >
+                  Funny
+                </button>
+                <button
+                  type="button"
+                  data-on:click="$_qrMoving = !$_qrMoving"
+                  data-attr:class="$_qrMoving ? 'pill pill-success cursor-pointer select-none transition' : 'pill pill-muted cursor-pointer select-none transition'"
+                >
+                  Moving
+                </button>
+                <button
+                  type="button"
+                  data-on:click="$_qrLaughedOutLoud = !$_qrLaughedOutLoud"
+                  data-attr:class="$_qrLaughedOutLoud ? 'pill pill-success cursor-pointer select-none transition' : 'pill pill-muted cursor-pointer select-none transition'"
+                >
+                  Laughed out loud
+                </button>
+                <button
+                  type="button"
+                  data-on:click="$_qrRelatable = !$_qrRelatable"
+                  data-attr:class="$_qrRelatable ? 'pill pill-success cursor-pointer select-none transition' : 'pill pill-muted cursor-pointer select-none transition'"
+                >
+                  Relatable
+                </button>
+                <button
+                  type="button"
+                  data-on:click="$_qrQuickRead = !$_qrQuickRead"
+                  data-attr:class="$_qrQuickRead ? 'pill pill-info cursor-pointer select-none transition' : 'pill pill-muted cursor-pointer select-none transition'"
+                >
+                  Quick read
+                </button>
+                <button
+                  type="button"
+                  data-on:click="$_qrSlowBurn = !$_qrSlowBurn"
+                  data-attr:class="$_qrSlowBurn ? 'pill pill-info cursor-pointer select-none transition' : 'pill pill-muted cursor-pointer select-none transition'"
+                >
+                  Slow burn
+                </button>
+                <button
+                  type="button"
+                  data-on:click="$_qrDense = !$_qrDense"
+                  data-attr:class="$_qrDense ? 'pill pill-info cursor-pointer select-none transition' : 'pill pill-muted cursor-pointer select-none transition'"
+                >
+                  Dense
+                </button>
+                <button
+                  type="button"
+                  data-on:click="$_qrPredictablePlot = !$_qrPredictablePlot"
+                  data-attr:class="$_qrPredictablePlot ? 'pill pill-warning cursor-pointer select-none transition' : 'pill pill-muted cursor-pointer select-none transition'"
+                >
+                  Predictable plot
+                </button>
+                <button
+                  type="button"
+                  data-on:click="$_qrDisappointingEnding = !$_qrDisappointingEnding"
+                  data-attr:class="$_qrDisappointingEnding ? 'pill pill-warning cursor-pointer select-none transition' : 'pill pill-muted cursor-pointer select-none transition'"
+                >
+                  Disappointing ending
+                </button>
+                <button
+                  type="button"
+                  data-on:click="$_qrUnrelatableCharacters = !$_qrUnrelatableCharacters"
+                  data-attr:class="$_qrUnrelatableCharacters ? 'pill pill-warning cursor-pointer select-none transition' : 'pill pill-muted cursor-pointer select-none transition'"
+                >
+                  Unrelatable characters
+                </button>
+                <button
+                  type="button"
+                  data-on:click="$_qrForgettable = !$_qrForgettable"
+                  data-attr:class="$_qrForgettable ? 'pill pill-warning cursor-pointer select-none transition' : 'pill pill-muted cursor-pointer select-none transition'"
+                >
+                  Forgettable
+                </button>
+                <button
+                  type="button"
+                  data-on:click="$_qrTooLong = !$_qrTooLong"
+                  data-attr:class="$_qrTooLong ? 'pill pill-warning cursor-pointer select-none transition' : 'pill pill-muted cursor-pointer select-none transition'"
+                >
+                  Too long
+                </button>
+                <button
+                  type="button"
+                  data-on:click="$_qrOddPov = !$_qrOddPov"
+                  data-attr:class="$_qrOddPov ? 'pill pill-warning cursor-pointer select-none transition' : 'pill pill-muted cursor-pointer select-none transition'"
+                >
+                  Odd POV
+                </button>
+                <button
+                  type="button"
+                  data-on:click="$_qrOverrated = !$_qrOverrated"
+                  data-attr:class="$_qrOverrated ? 'pill pill-warning cursor-pointer select-none transition' : 'pill pill-muted cursor-pointer select-none transition'"
+                >
+                  Overrated
+                </button>
+              </div>
+              <input
+                type="hidden"
+                name="quick_reviews"
+                data-attr:value="[$_qrLovedIt && 'loved-it', $_qrPageTurner && 'page-turner', $_qrThoughtProvoking && 'thought-provoking', $_qrCouldntPutDown && 'couldnt-put-down', $_qrGreatCharacters && 'great-characters', $_qrFunny && 'funny', $_qrMoving && 'moving', $_qrLaughedOutLoud && 'laughed-out-loud', $_qrRelatable && 'relatable', $_qrQuickRead && 'quick-read', $_qrSlowBurn && 'slow-burn', $_qrDense && 'dense', $_qrPredictablePlot && 'predictable-plot', $_qrDisappointingEnding && 'disappointing-ending', $_qrUnrelatableCharacters && 'unrelatable-characters', $_qrForgettable && 'forgettable', $_qrTooLong && 'too-long', $_qrOddPov && 'odd-pov', $_qrOverrated && 'overrated'].filter(Boolean).join(',')"
+              />
+            </div>
+          </div>
+          <label
+            class="flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 transition hover:border-accent/40"
+          >
+            <input
+              type="checkbox"
+              name="book_club"
+              value="true"
+              class="peer sr-only"
+            />
+            <div class="toggle-track"></div>
+            <span class="text-sm font-medium text-text-secondary"
+              >Book club pick</span
+            >
+          </label>
+          <div class="sticky-submit flex flex-col gap-2">
+            <button
+              type="submit"
+              class="inline-flex w-full items-center justify-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-semibold text-accent-text transition hover:bg-accent-hover"
+            >
+              {{ icons::plus("h-4 w-4") }} Add to Library
+            </button>
+            <button
+              type="button"
+              onclick="history.back()"
+              class="inline-flex w-full items-center justify-center gap-2 rounded-md border px-4 py-2 text-sm font-medium text-text-secondary transition hover:bg-surface-alt"
+            >
+              {{ icons::x_mark("h-4 w-4") }} Cancel
+            </button>
+          </div>
+        </form>
+      {% endif %}
+    </div>
+  </section>
+{% endblock %}

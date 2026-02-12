@@ -1,0 +1,75 @@
+{% import "partials/icons.html" as icons %}
+{% import "partials/lists/table.html" as table %}
+
+<section
+  id="reading-list"
+  class="rounded-lg border bg-surface"
+  data-infinite-scroll
+  {% if readings.has_next() %}
+    data-next-url="{{ navigator.fragment_page_href(readings.next_page().unwrap()) }}"
+  {% endif %}
+  data-target="#reading-list"
+>
+  {{ table::search_header(navigator, "#reading-list") }}
+  <div class="responsive-table">
+    <table class="w-full text-left text-sm">
+      <thead
+        class="border-b text-xs font-semibold uppercase tracking-wide text-text-muted"
+      >
+        <tr>
+          {{ table::sortable_header("Added", "created_at", navigator, "#reading-list") }}
+          <th scope="col" class="px-4 py-3">Book</th>
+          {{ table::sortable_header("Status", "status", navigator, "#reading-list") }}
+          <th scope="col" class="px-4 py-3 hidden md:table-cell">Rating</th>
+          <th scope="col" class="px-4 py-3 hidden md:table-cell">Started</th>
+          <th scope="col" class="px-4 py-3 hidden md:table-cell">Finished</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y">
+        {% for reading in readings.items %}
+          <tr
+            class="cursor-pointer transition hover:bg-surface-alt"
+            onclick="navigateRow(event, '{{ reading.detail_path }}')"
+          >
+            <td class="px-4 py-3 text-text-muted whitespace-nowrap">
+              <time>{{ reading.created_date }}</time>
+            </td>
+            <td class="px-4 py-3">
+              <a
+                href="/books/{{ reading.book_id }}"
+                class="font-medium text-accent hover:text-accent-hover transition"
+                >{{ reading.book_title }}</a
+              >
+              <div class="text-xs text-text-muted">
+                {{ reading.author_names }}
+              </div>
+            </td>
+            <td class="px-4 py-3">
+              <span class="pill pill-muted">{{ reading.status_label }}</span>
+            </td>
+            <td class="px-4 py-3 hidden md:table-cell text-text-secondary">
+              {{ reading.rating }}
+            </td>
+            <td
+              class="px-4 py-3 hidden md:table-cell text-text-muted whitespace-nowrap"
+            >
+              {{ reading.started_date }}
+            </td>
+            <td
+              class="px-4 py-3 hidden md:table-cell text-text-muted whitespace-nowrap"
+            >
+              {{ reading.finished_date }}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {{ table::pagination_header(readings, navigator, "#reading-list") }}
+  {% if readings.has_next() %}
+    <div
+      class="infinite-scroll-sentinel h-4 md:hidden"
+      aria-hidden="true"
+    ></div>
+  {% endif %}
+</section>

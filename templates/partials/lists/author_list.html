@@ -1,0 +1,52 @@
+{% import "partials/icons.html" as icons %}
+{% import "partials/lists/table.html" as table %}
+
+<section
+  id="author-list"
+  class="rounded-lg border bg-surface"
+  data-infinite-scroll
+  {% if authors.has_next() %}
+    data-next-url="{{ navigator.fragment_page_href(authors.next_page().unwrap()) }}"
+  {% endif %}
+  data-target="#author-list"
+>
+  {{ table::search_header(navigator, "#author-list") }}
+  <div class="responsive-table">
+    <table class="w-full text-left text-sm">
+      <thead
+        class="border-b text-xs font-semibold uppercase tracking-wide text-text-muted"
+      >
+        <tr>
+          {{ table::sortable_header("Added", "created_at", navigator, "#author-list") }}
+          {{ table::sortable_header("Name", "name", navigator, "#author-list") }}
+        </tr>
+      </thead>
+      <tbody class="divide-y">
+        {% for author in authors.items %}
+          <tr
+            class="cursor-pointer transition hover:bg-surface-alt"
+            onclick="navigateRow(event, '{{ author.detail_path }}')"
+          >
+            <td class="px-4 py-3 text-text-muted whitespace-nowrap">
+              <time>{{ author.created_date }}</time>
+            </td>
+            <td class="px-4 py-3 font-medium">
+              <a
+                href="{{ author.detail_path }}"
+                class="text-accent hover:text-accent-hover transition"
+                >{{ author.name }}</a
+              >
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {{ table::pagination_header(authors, navigator, "#author-list") }}
+  {% if authors.has_next() %}
+    <div
+      class="infinite-scroll-sentinel h-4 md:hidden"
+      aria-hidden="true"
+    ></div>
+  {% endif %}
+</section>

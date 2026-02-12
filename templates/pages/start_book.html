@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% import "partials/icons.html" as icons %}
+{% import "partials/detail_cards.html" as cards %}
+{% block title %}Booklog · Start Book{% endblock %}
+{% block content %}
+  <header>
+    <h1 class="text-2xl font-semibold">Start Book</h1>
+  </header>
+
+  <section data-signals:_submitting="false" data-signals:_submit-error="''">
+    <form
+      class="flex flex-col gap-6 pb-16 md:pb-0"
+      data-on:submit="$_submitting = true; $_submitError = ''; @post('/api/v1/readings', {contentType: 'form'})"
+      data-on:datastar-fetch="if (!$_submitting) return; if (evt.detail.type === 'finished') { sessionStorage.setItem('toast', 'Started reading'); window.location.href = '/' } else if (evt.detail.type === 'error') { $_submitting = false; $_submitError = 'Save failed. Please try again.' }"
+    >
+      <input type="hidden" name="book_id" value="{{ book_id }}" />
+      <input type="hidden" name="status" value="reading" />
+
+      <div
+        class="rounded-lg border bg-surface-alt px-4 py-3 flex gap-4 items-start"
+      >
+        {% if let Some(url) = thumbnail_url %}
+          <img
+            src="{{ url }}"
+            alt=""
+            class="h-20 w-14 rounded object-cover shrink-0"
+          />
+        {% else %}
+          <div
+            class="h-20 w-14 rounded bg-surface flex items-center justify-center shrink-0"
+          >
+            {{ icons::book("h-6 w-6 text-text-muted") }}
+          </div>
+        {% endif %}
+        <div class="flex flex-col gap-0.5 min-w-0">
+          <span
+            class="text-xs font-semibold text-text-muted uppercase tracking-wide"
+            >Book</span
+          >
+          <p class="font-medium text-text truncate">{{ book_label }}</p>
+          <p class="text-sm text-text-secondary truncate">{{ author_names }}</p>
+          {% if !page_count_label.is_empty() %}
+            <p class="text-xs text-text-muted">{{ page_count_label }}</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="grid gap-4 sm:grid-cols-2">
+        <label class="flex flex-col gap-1 text-sm">
+          <span
+            class="text-xs font-semibold text-text-muted uppercase tracking-wide"
+            >Format</span
+          >
+          <select name="format" class="input-field">
+            <option value="" disabled selected>Select format</option>
+            <option value="physical">Physical</option>
+            <option value="ereader">eReader</option>
+            <option value="audiobook">Audiobook</option>
+            <option value="not_owned">Not Owned</option>
+          </select>
+        </label>
+        <label class="flex flex-col gap-1 text-sm">
+          <span
+            class="text-xs font-semibold text-text-muted uppercase tracking-wide"
+            >Started</span
+          >
+          <input
+            type="date"
+            name="started_at"
+            value="{{ started_at }}"
+            class="input-field"
+          />
+        </label>
+      </div>
+
+      <label
+        class="flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 transition hover:border-accent/40"
+      >
+        <input
+          type="checkbox"
+          name="book_club"
+          value="true"
+          class="peer sr-only"
+          {% if book_club %}checked{% endif %}
+        />
+        <div class="toggle-track"></div>
+        <span class="text-sm font-medium text-text-secondary"
+          >Book club pick</span
+        >
+      </label>
+
+      {{ cards::edit_form_actions() }}
+    </form>
+  </section>
+{% endblock %}

@@ -1,0 +1,74 @@
+{% import "partials/icons.html" as icons %}
+{% import "partials/lists/table.html" as table %}
+
+<section
+  id="book-list"
+  class="rounded-lg border bg-surface"
+  data-infinite-scroll
+  {% if books.has_next() %}
+    data-next-url="{{ navigator.fragment_page_href(books.next_page().unwrap()) }}"
+  {% endif %}
+  data-target="#book-list"
+>
+  {{ table::search_header(navigator, "#book-list") }}
+  <div class="responsive-table">
+    <table class="w-full text-left text-sm">
+      <thead
+        class="border-b text-xs font-semibold uppercase tracking-wide text-text-muted"
+      >
+        <tr>
+          {{ table::sortable_header("Added", "created_at", navigator, "#book-list") }}
+          {{ table::sortable_header("Title", "title", navigator, "#book-list") }}
+          <th scope="col" class="px-4 py-3">Author</th>
+          <th scope="col" class="px-4 py-3 hidden md:table-cell">Year</th>
+          <th scope="col" class="px-4 py-3 hidden md:table-cell">Pages</th>
+          <th scope="col" class="px-4 py-3 hidden md:table-cell">
+            <span class="sr-only">Library</span>
+          </th>
+        </tr>
+      </thead>
+      <tbody class="divide-y">
+        {% for book in books.items %}
+          <tr
+            class="cursor-pointer transition hover:bg-surface-alt"
+            onclick="navigateRow(event, '{{ book.detail_path }}')"
+          >
+            <td class="px-4 py-3 text-text-muted whitespace-nowrap">
+              <time>{{ book.created_date }}</time>
+            </td>
+            <td class="px-4 py-3 font-medium">
+              <a
+                href="{{ book.detail_path }}"
+                class="text-accent hover:text-accent-hover transition"
+                >{{ book.title }}</a
+              >
+            </td>
+            <td class="px-4 py-3 text-text-secondary">
+              {{ book.author_label }}
+            </td>
+            <td class="px-4 py-3 hidden md:table-cell text-text-secondary">
+              {{ book.year_published }}
+            </td>
+            <td class="px-4 py-3 hidden md:table-cell text-text-secondary">
+              {{ book.page_count }}
+            </td>
+            <td class="px-4 py-3 hidden md:table-cell text-center">
+              {% if book.in_library %}
+                <span title="In library"
+                  >{{ icons::bookmark("h-4 w-4 text-accent shrink-0 inline") }}</span
+                >
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {{ table::pagination_header(books, navigator, "#book-list") }}
+  {% if books.has_next() %}
+    <div
+      class="infinite-scroll-sentinel h-4 md:hidden"
+      aria-hidden="true"
+    ></div>
+  {% endif %}
+</section>

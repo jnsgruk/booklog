@@ -1,0 +1,681 @@
+{% extends "base.html" %}
+{% import "partials/icons.html" as icons %}
+{% block title %}Booklog{% endblock %}
+{% block head %}
+  <meta property="og:image" content="{{ base_url }}/static/og-image.png" />
+{% endblock %}
+{% block content %}
+  <!-- Scan Book -->
+  {% if is_authenticated %}
+    <section
+      data-signals:_extracting="false"
+      data-signals:_extract-error="''"
+      data-signals:_scan-extracted="false"
+      data-signals:_scan-submitting="false"
+      data-signals:_scan-error="''"
+      data-signals:_author-name="''"
+      data-signals:_book-title="''"
+      data-signals:_book-isbn="''"
+      data-signals:_book-description="''"
+      data-signals:_book-pages="''"
+      data-signals:_book-year="''"
+      data-signals:_book-publisher="''"
+      data-signals:_book-language="''"
+      data-signals:_book-primary-genre="''"
+      data-signals:_book-secondary-genre="''"
+      data-signals:_book-primary-genre-id="''"
+      data-signals:_book-secondary-genre-id="''"
+      data-signals:_scan-shelf="'library'"
+      data-signals:_matched-author-id="''"
+      data-signals:_matched-book-id="''"
+      data-signals:_book-club="false"
+      data-signals:_cover-1="''"
+      data-signals:_cover-2="''"
+      data-signals:_cover-3="''"
+      data-signals:_cover-4="''"
+      data-signals:_cover-5="''"
+      data-signals:_selected-cover="'none'"
+      data-signals:_has-scan-photo="false"
+    >
+      <input
+        type="hidden"
+        name="image"
+        id="scan-image"
+        form="scan-extract-form"
+      />
+      <input
+        type="hidden"
+        name="prompt"
+        id="scan-prompt"
+        form="scan-extract-form"
+      />
+      <form
+        id="scan-extract-form"
+        data-on:submit="$_extracting = true; $_extractError = ''; @post('/api/v1/extract-book', {contentType: 'form'})"
+        data-on:datastar-fetch="if (!$_extracting) return; if (evt.detail.type === 'finished') { $_extracting = false; $_scanExtracted = true; const scanImg = document.getElementById('scan-image').value; document.getElementById('scan-image-save').value = scanImg; if (scanImg) { $_hasScanPhoto = true; const preview = document.getElementById('scan-photo-preview'); if (preview) preview.src = scanImg; $_selectedCover = 'photo' } else if ($_cover1) { $_selectedCover = $_cover1 } else { $_selectedCover = 'none' }; document.getElementById('scan-extract-form').reset(); document.getElementById('scan-prompt-visible').value = '' } else if (evt.detail.type === 'error') { $_extracting = false; $_extractError = 'Extraction failed. Please try again.' }"
+        class="hidden"
+      ></form>
+
+      <!-- Quick actions (shown when not yet extracted) -->
+      <div data-show="!$_scanExtracted">
+        <div class="rounded-lg border bg-surface p-3">
+          <div data-show="!$_extracting" class="flex items-center gap-2">
+            <brew-photo-capture
+              target-input="scan-image"
+              target-form="scan-extract-form"
+              class="shrink-0 inline-flex items-center justify-center rounded-md border p-2.5 text-accent transition hover:bg-surface-alt cursor-pointer"
+              aria-label="Scan book"
+            >
+              {{ icons::camera("h-5 w-5") }}
+            </brew-photo-capture>
+            <a
+              href="/add"
+              class="shrink-0 inline-flex items-center justify-center rounded-md border p-2.5 text-accent transition hover:bg-surface-alt"
+              title="Add manually"
+              aria-label="Add manually"
+            >
+              {{ icons::plus("h-5 w-5") }}
+            </a>
+            <input
+              type="text"
+              class="input-field w-full"
+              placeholder="Describe a book&hellip;"
+              id="scan-prompt-visible"
+              data-on:keydown="if (evt.key === 'Enter') { evt.preventDefault(); const v = evt.target.value.trim(); if (!v) return; document.getElementById('scan-prompt').value = v; document.getElementById('scan-extract-form').requestSubmit() }"
+            />
+          </div>
+          <div
+            data-show="$_extracting"
+            style="display:none"
+            class="flex items-center justify-center gap-3 text-sm text-accent"
+          >
+            {{ icons::spinner("h-5 w-5") }} Waiting for response&hellip;
+          </div>
+          <p
+            data-show="$_extractError"
+            data-text="$_extractError"
+            style="display:none"
+            class="mt-2 text-sm text-error text-center"
+            role="alert"
+          ></p>
+        </div>
+      </div>
+
+      <!-- Form: pre-filled author + book (shown after extraction) -->
+      <div data-show="$_scanExtracted" style="display: none">
+        <form
+          class="rounded-lg border bg-surface p-5 flex flex-col gap-6"
+          data-on:submit="$_scanSubmitting = true; $_scanError = ''; @post('/api/v1/scan', {contentType: 'form'})"
+          data-on:datastar-fetch="if (!$_scanSubmitting) return; if (evt.detail.type === 'finished') { sessionStorage.setItem('toast', 'Book saved'); window.location.reload() } else if (evt.detail.type === 'error') { $_scanSubmitting = false; $_scanError = 'Save failed. Please try again.' }"
+        >
+          {% include "partials/forms/scan_result_form.html" %}
+        </form>
+      </div>
+    </section>
+  {% endif %}
+
+  <!-- Currently Reading -->
+  <section>
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-lg font-semibold text-text">Currently Reading</h2>
+      <a
+        href="/data?type=readings"
+        class="text-sm text-accent hover:text-accent-hover font-medium"
+        >View all &rarr;</a
+      >
+    </div>
+    {% if !currently_reading.is_empty() %}
+      <chip-scroll class="relative block">
+        <button
+          type="button"
+          aria-label="Scroll left"
+          class="hidden absolute -left-4 top-1/2 z-10 -translate-y-1/2 items-center justify-center rounded-full border bg-surface p-1.5 text-text-muted shadow-sm transition hover:text-text"
+          data-scroll-left
+          onclick="this.closest('chip-scroll').querySelector('[data-chip-scroll]').scrollBy({left: -220, behavior: 'smooth'})"
+        >
+          {{ icons::chevron_left("h-5 w-5") }}
+        </button>
+        <div
+          class="flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory scrollbar-hide"
+          data-chip-scroll
+        >
+          {% for reading in currently_reading %}
+            <div
+              class="w-[200px] shrink-0 snap-start rounded-lg border bg-surface p-4 flex flex-col"
+            >
+              <a
+                href="/books/{{ reading.book_id }}"
+                class="flex flex-col flex-1"
+              >
+                <div class="h-[3.25rem] overflow-hidden">
+                  <span class="block font-semibold text-text truncate"
+                    >{{ reading.book_title }}</span
+                  >
+                  <p class="mt-0.5 text-xs text-text-muted">
+                    {{ reading.relative_date_label }}
+                  </p>
+                </div>
+                <div class="mt-2 mb-3 flex justify-center">
+                  {% if let Some(url) = reading.thumbnail_url %}
+                    <img
+                      src="{{ url }}"
+                      alt=""
+                      class="h-28 w-auto rounded object-contain"
+                    />
+                  {% else %}
+                    <div
+                      class="flex h-28 w-20 items-center justify-center rounded bg-surface-alt"
+                    >
+                      {{ icons::book("h-6 w-6 text-text-muted") }}
+                    </div>
+                  {% endif %}
+                </div>
+                <div
+                  class="flex-1 space-y-1 text-text-secondary"
+                  style="font-size: 0.8125rem"
+                >
+                  <p class="truncate">{{ reading.author_names }}</p>
+                  {% if !reading.page_count_label.is_empty() %}
+                    <p>{{ reading.page_count_label }}</p>
+                  {% endif %}
+                </div>
+              </a>
+              <a
+                href="/readings/{{ reading.id }}/edit?finish=true"
+                class="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-md border px-2 py-1.5 text-sm font-medium text-accent transition hover:border-accent/40"
+              >
+                {{ icons::check_circle("h-4 w-4") }} Finish
+              </a>
+            </div>
+          {% endfor %}
+        </div>
+        <button
+          type="button"
+          aria-label="Scroll right"
+          class="hidden absolute -right-4 top-1/2 z-10 -translate-y-1/2 items-center justify-center rounded-full border bg-surface p-1.5 text-text-muted shadow-sm transition hover:text-text"
+          data-scroll-right
+          onclick="this.closest('chip-scroll').querySelector('[data-chip-scroll]').scrollBy({left: 220, behavior: 'smooth'})"
+        >
+          {{ icons::chevron_right("h-5 w-5") }}
+        </button>
+      </chip-scroll>
+    {% else %}
+      <div class="relative">
+        <div
+          class="flex gap-4 overflow-hidden blur-[2px] select-none pointer-events-none"
+          aria-hidden="true"
+        >
+          {% for _ in 0..6 %}
+            <div
+              class="w-[200px] shrink-0 rounded-lg border bg-surface p-4 flex flex-col"
+            >
+              <div class="h-[3.25rem]">
+                <div class="h-4 w-3/4 rounded bg-surface-alt"></div>
+                <div class="mt-2 h-3 w-1/2 rounded bg-surface-alt"></div>
+              </div>
+              <div class="mt-2 mb-3 flex justify-center">
+                <div class="h-28 w-20 rounded bg-surface-alt"></div>
+              </div>
+              <div class="flex-1 space-y-2">
+                <div class="h-3 w-full rounded bg-surface-alt"></div>
+                <div class="h-3 w-2/3 rounded bg-surface-alt"></div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+        <div class="absolute inset-0 z-10 flex items-center justify-center">
+          <span class="text-lg font-semibold text-text-muted"
+            >Nothing in progress right now</span
+          >
+        </div>
+      </div>
+    {% endif %}
+  </section>
+
+  <!-- Recently Added -->
+  <section>
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-lg font-semibold text-text">Recently Added</h2>
+      <a
+        href="/data"
+        class="text-sm text-accent hover:text-accent-hover font-medium"
+        >View all &rarr;</a
+      >
+    </div>
+    {% if !recently_added.is_empty() %}
+      <chip-scroll class="relative block">
+        <button
+          type="button"
+          aria-label="Scroll left"
+          class="hidden absolute -left-4 top-1/2 z-10 -translate-y-1/2 items-center justify-center rounded-full border bg-surface p-1.5 text-text-muted shadow-sm transition hover:text-text"
+          data-scroll-left
+          onclick="this.closest('chip-scroll').querySelector('[data-chip-scroll]').scrollBy({left: -220, behavior: 'smooth'})"
+        >
+          {{ icons::chevron_left("h-5 w-5") }}
+        </button>
+        <div
+          class="flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory scrollbar-hide"
+          data-chip-scroll
+        >
+          {% for item in recently_added %}
+            <div
+              class="w-[200px] shrink-0 snap-start rounded-lg border bg-surface p-4 flex flex-col"
+            >
+              <a href="{{ item.detail_path }}" class="flex flex-col flex-1">
+                <div class="h-[3.25rem] overflow-hidden">
+                  <span class="block font-semibold text-text truncate"
+                    >{{ item.title }}</span
+                  >
+                  <p class="mt-0.5 text-xs text-text-muted">
+                    {{ item.relative_date_label }}
+                  </p>
+                </div>
+                <div class="mt-2 mb-3 flex justify-center">
+                  {% if let Some(url) = item.thumbnail_url %}
+                    <img
+                      src="{{ url }}"
+                      alt=""
+                      class="h-28 w-auto rounded object-contain"
+                    />
+                  {% else %}
+                    <div
+                      class="flex h-28 w-20 items-center justify-center rounded bg-surface-alt"
+                    >
+                      {{ icons::book("h-6 w-6 text-text-muted") }}
+                    </div>
+                  {% endif %}
+                </div>
+                <div
+                  class="flex-1 space-y-1 text-text-secondary"
+                  style="font-size: 0.8125rem"
+                >
+                  <p class="truncate">{{ item.author_label }}</p>
+                </div>
+              </a>
+              <a
+                href="/books/{{ item.book_id }}/start"
+                class="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-md border px-2 py-1.5 text-sm font-medium text-accent transition hover:border-accent/40"
+              >
+                {{ icons::bookmark("h-4 w-4") }} Start Reading
+              </a>
+            </div>
+          {% endfor %}
+        </div>
+        <button
+          type="button"
+          aria-label="Scroll right"
+          class="hidden absolute -right-4 top-1/2 z-10 -translate-y-1/2 items-center justify-center rounded-full border bg-surface p-1.5 text-text-muted shadow-sm transition hover:text-text"
+          data-scroll-right
+          onclick="this.closest('chip-scroll').querySelector('[data-chip-scroll]').scrollBy({left: 220, behavior: 'smooth'})"
+        >
+          {{ icons::chevron_right("h-5 w-5") }}
+        </button>
+      </chip-scroll>
+    {% else %}
+      <div class="relative">
+        <div
+          class="flex gap-4 overflow-hidden blur-[2px] select-none pointer-events-none"
+          aria-hidden="true"
+        >
+          {% for _ in 0..6 %}
+            <div
+              class="w-[200px] shrink-0 rounded-lg border bg-surface p-4 flex flex-col"
+            >
+              <div class="h-[3.25rem]">
+                <div class="h-4 w-3/4 rounded bg-surface-alt"></div>
+                <div class="mt-2 h-3 w-1/2 rounded bg-surface-alt"></div>
+              </div>
+              <div class="mt-2 mb-3 flex justify-center">
+                <div class="h-28 w-20 rounded bg-surface-alt"></div>
+              </div>
+              <div class="flex-1 space-y-2">
+                <div class="h-3 w-full rounded bg-surface-alt"></div>
+                <div class="h-3 w-2/3 rounded bg-surface-alt"></div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+        <div class="absolute inset-0 z-10 flex items-center justify-center">
+          <span class="text-lg font-semibold text-text-muted"
+            >Nothing recently added</span
+          >
+        </div>
+      </div>
+    {% endif %}
+  </section>
+
+  <!-- Wishlist -->
+  <section>
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-lg font-semibold text-text">Wishlist</h2>
+      <a
+        href="/data?type=wishlist"
+        class="text-sm text-accent hover:text-accent-hover font-medium"
+        >View all &rarr;</a
+      >
+    </div>
+    {% if !wishlist.is_empty() %}
+      <chip-scroll class="relative block">
+        <button
+          type="button"
+          aria-label="Scroll left"
+          class="hidden absolute -left-4 top-1/2 z-10 -translate-y-1/2 items-center justify-center rounded-full border bg-surface p-1.5 text-text-muted shadow-sm transition hover:text-text"
+          data-scroll-left
+          onclick="this.closest('chip-scroll').querySelector('[data-chip-scroll]').scrollBy({left: -220, behavior: 'smooth'})"
+        >
+          {{ icons::chevron_left("h-5 w-5") }}
+        </button>
+        <div
+          class="flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory scrollbar-hide"
+          data-chip-scroll
+        >
+          {% for item in wishlist %}
+            <div
+              class="w-[200px] shrink-0 snap-start rounded-lg border bg-surface p-4 flex flex-col"
+            >
+              <a href="{{ item.detail_path }}" class="flex flex-col flex-1">
+                <div class="h-[3.25rem] overflow-hidden">
+                  <span class="block font-semibold text-text truncate"
+                    >{{ item.title }}</span
+                  >
+                  <p class="mt-0.5 text-xs text-text-muted">
+                    {{ item.relative_date_label }}
+                  </p>
+                </div>
+                <div class="mt-2 mb-3 flex justify-center">
+                  {% if let Some(url) = item.thumbnail_url %}
+                    <img
+                      src="{{ url }}"
+                      alt=""
+                      class="h-28 w-auto rounded object-contain"
+                    />
+                  {% else %}
+                    <div
+                      class="flex h-28 w-20 items-center justify-center rounded bg-surface-alt"
+                    >
+                      {{ icons::book("h-6 w-6 text-text-muted") }}
+                    </div>
+                  {% endif %}
+                </div>
+                <div
+                  class="flex-1 space-y-1 text-text-secondary"
+                  style="font-size: 0.8125rem"
+                >
+                  <p class="truncate">{{ item.author_label }}</p>
+                </div>
+              </a>
+              <a
+                href="/books/{{ item.book_id }}/start"
+                class="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-md border px-2 py-1.5 text-sm font-medium text-accent transition hover:border-accent/40"
+              >
+                {{ icons::bookmark("h-4 w-4") }} Start Reading
+              </a>
+            </div>
+          {% endfor %}
+        </div>
+        <button
+          type="button"
+          aria-label="Scroll right"
+          class="hidden absolute -right-4 top-1/2 z-10 -translate-y-1/2 items-center justify-center rounded-full border bg-surface p-1.5 text-text-muted shadow-sm transition hover:text-text"
+          data-scroll-right
+          onclick="this.closest('chip-scroll').querySelector('[data-chip-scroll]').scrollBy({left: 220, behavior: 'smooth'})"
+        >
+          {{ icons::chevron_right("h-5 w-5") }}
+        </button>
+      </chip-scroll>
+    {% else %}
+      <div class="relative">
+        <div
+          class="flex gap-4 overflow-hidden blur-[2px] select-none pointer-events-none"
+          aria-hidden="true"
+        >
+          {% for _ in 0..6 %}
+            <div
+              class="w-[200px] shrink-0 rounded-lg border bg-surface p-4 flex flex-col"
+            >
+              <div class="h-[3.25rem]">
+                <div class="h-4 w-3/4 rounded bg-surface-alt"></div>
+                <div class="mt-2 h-3 w-1/2 rounded bg-surface-alt"></div>
+              </div>
+              <div class="mt-2 mb-3 flex justify-center">
+                <div class="h-28 w-20 rounded bg-surface-alt"></div>
+              </div>
+              <div class="flex-1 space-y-2">
+                <div class="h-3 w-full rounded bg-surface-alt"></div>
+                <div class="h-3 w-2/3 rounded bg-surface-alt"></div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+        <div class="absolute inset-0 z-10 flex items-center justify-center">
+          <span class="text-lg font-semibold text-text-muted"
+            >Nothing on the wishlist</span
+          >
+        </div>
+      </div>
+    {% endif %}
+  </section>
+
+  <!-- Recent Activity -->
+  <section>
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-lg font-semibold text-text">Recent Activity</h2>
+      <a
+        href="/timeline"
+        class="text-sm text-accent hover:text-accent-hover font-medium"
+        >View full timeline &rarr;</a
+      >
+    </div>
+    {% if !recent_events.is_empty() %}
+      <div class="space-y-2">
+        {% for event in recent_events %}
+          <a
+            href="{{ event.link }}"
+            class="rounded-lg border bg-surface px-4 py-3 flex items-center justify-between gap-3 transition hover:border-accent/40"
+          >
+            <div class="flex items-center gap-3 min-w-0">
+              <span class="text-text-muted shrink-0">
+                {% if event.entity_type == "reading" %}{{ icons::bookmark("h-5 w-5") }}{% elif event.entity_type == "book" %}{{ icons::book("h-5 w-5") }}{% elif event.entity_type == "author" %}{{ icons::pen("h-5 w-5") }}{% else %}{{ icons::book("h-5 w-5") }}{% endif %}
+              </span>
+              <p class="min-w-0 truncate text-sm">
+                <span class="font-medium text-text">{{ event.title }}</span
+                >{% if let Some(sub) = event.subtitle %}
+                  <span class="text-xs text-text-muted">· {{ sub }}</span>
+                {% endif %}
+              </p>
+            </div>
+            <time class="text-xs text-text-muted whitespace-nowrap shrink-0"
+              >{{ event.relative_date_label }}</time
+            >
+          </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="relative">
+        <div
+          class="space-y-2 blur-[2px] select-none pointer-events-none"
+          aria-hidden="true"
+        >
+          {% for _ in 0..3 %}
+            <div
+              class="rounded-lg border bg-surface px-4 py-3 flex items-center justify-between gap-3"
+            >
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="h-5 w-5 shrink-0 rounded-full bg-surface-alt"></div>
+                <div class="h-4 w-40 rounded bg-surface-alt"></div>
+              </div>
+              <div class="h-3 w-16 shrink-0 rounded bg-surface-alt"></div>
+            </div>
+          {% endfor %}
+        </div>
+        <div class="absolute inset-0 z-10 flex items-center justify-center">
+          <span class="text-lg font-semibold text-text-muted"
+            >No activity yet</span
+          >
+        </div>
+      </div>
+    {% endif %}
+  </section>
+
+  <!-- Stats -->
+  <section>
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="text-lg font-semibold text-text">Stats</h2>
+      <a
+        href="/stats"
+        class="text-sm text-accent hover:text-accent-hover font-medium"
+        >View all stats &rarr;</a
+      >
+    </div>
+    {% if !stats.is_empty() && !stat_cards.is_empty() %}
+      <chip-scroll class="relative block">
+        <button
+          type="button"
+          aria-label="Scroll left"
+          class="hidden absolute -left-4 top-1/2 z-10 -translate-y-1/2 items-center justify-center rounded-full border bg-surface p-1.5 text-text-muted shadow-sm transition hover:text-text"
+          data-scroll-left
+          onclick="this.closest('chip-scroll').querySelector('[data-chip-scroll]').scrollBy({left: -200, behavior: 'smooth'})"
+        >
+          {{ icons::chevron_left("h-5 w-5") }}
+        </button>
+        <div
+          class="grid grid-flow-col auto-cols-[minmax(45vw,max-content)] md:auto-cols-[minmax(200px,max-content)] gap-3 overflow-x-auto scroll-smooth scrollbar-hide"
+          data-chip-scroll
+        >
+          {% for card in stat_cards %}
+            <a
+              href="/stats"
+              class="group flex flex-col items-center gap-1 rounded-lg border bg-surface p-4 transition hover:border-accent/40"
+            >
+              {% if card.icon == "book" %}{{ icons::book("h-6 w-6 text-accent") }}{% else if card.icon == "bookmark" %}{{ icons::bookmark("h-6 w-6 text-accent") }}{% else if card.icon == "pen" %}{{ icons::pen("h-6 w-6 text-accent") }}{% else if card.icon == "archive" %}{{ icons::archive("h-6 w-6 text-accent") }}{% else if card.icon == "map" %}{{ icons::map("h-6 w-6 text-accent") }}{% endif %}
+              <span class="text-lg font-bold text-text whitespace-nowrap"
+                >{{ card.value }}</span
+              >
+              <span class="text-sm font-medium text-accent"
+                >{{ card.label }}</span
+              >
+            </a>
+          {% endfor %}
+        </div>
+        <button
+          type="button"
+          aria-label="Scroll right"
+          class="hidden absolute -right-4 top-1/2 z-10 -translate-y-1/2 items-center justify-center rounded-full border bg-surface p-1.5 text-text-muted shadow-sm transition hover:text-text"
+          data-scroll-right
+          onclick="this.closest('chip-scroll').querySelector('[data-chip-scroll]').scrollBy({left: 200, behavior: 'smooth'})"
+        >
+          {{ icons::chevron_right("h-5 w-5") }}
+        </button>
+      </chip-scroll>
+    {% else %}
+      <div class="relative">
+        <div
+          class="grid grid-flow-col auto-cols-[minmax(45vw,max-content)] md:auto-cols-[minmax(200px,max-content)] gap-3 overflow-hidden blur-[2px] select-none pointer-events-none"
+          aria-hidden="true"
+        >
+          {% for _ in 0..4 %}
+            <div
+              class="flex flex-col items-center gap-1 rounded-lg border bg-surface p-4"
+            >
+              <div class="h-6 w-6 rounded-full bg-surface-alt"></div>
+              <div class="h-5 w-16 rounded bg-surface-alt"></div>
+              <div class="h-4 w-20 rounded bg-surface-alt"></div>
+            </div>
+          {% endfor %}
+        </div>
+        <div class="absolute inset-0 z-10 flex items-center justify-center">
+          <span class="text-lg font-semibold text-text-muted"
+            >No stats yet</span
+          >
+        </div>
+      </div>
+    {% endif %}
+  </section>
+
+  <!-- Data Cards -->
+  <section>
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="text-lg font-semibold text-text">Data</h2>
+      <a
+        href="/data"
+        class="text-sm text-accent hover:text-accent-hover font-medium"
+        >View all data &rarr;</a
+      >
+    </div>
+    {% if !stats.is_empty() %}
+      <chip-scroll class="relative block">
+        <button
+          type="button"
+          aria-label="Scroll left"
+          class="hidden absolute -left-4 top-1/2 z-10 -translate-y-1/2 items-center justify-center rounded-full border bg-surface p-1.5 text-text-muted shadow-sm transition hover:text-text"
+          data-scroll-left
+          onclick="this.closest('chip-scroll').querySelector('[data-chip-scroll]').scrollBy({left: -200, behavior: 'smooth'})"
+        >
+          {{ icons::chevron_left("h-5 w-5") }}
+        </button>
+        <div
+          class="grid grid-flow-col auto-cols-[45vw] md:auto-cols-[200px] gap-3 overflow-x-auto scroll-smooth scrollbar-hide"
+          data-chip-scroll
+        >
+          <a
+            href="/data?type=library"
+            class="group flex flex-col items-center gap-1 rounded-lg border bg-surface p-4 transition hover:border-accent/40"
+          >
+            {{ icons::bookmark("h-6 w-6 text-accent") }}
+            <span class="text-lg font-bold text-text">{{ stats.library }}</span>
+            <span class="text-sm font-medium text-accent">Library</span>
+          </a>
+          <a
+            href="/data?type=wishlist"
+            class="group flex flex-col items-center gap-1 rounded-lg border bg-surface p-4 transition hover:border-accent/40"
+          >
+            {{ icons::heart("h-6 w-6 text-accent") }}
+            <span class="text-lg font-bold text-text"
+              >{{ stats.wishlist }}</span
+            >
+            <span class="text-sm font-medium text-accent">Wishlist</span>
+          </a>
+          <a
+            href="/data?type=readings"
+            class="group flex flex-col items-center gap-1 rounded-lg border bg-surface p-4 transition hover:border-accent/40"
+          >
+            {{ icons::book("h-6 w-6 text-accent") }}
+            <span class="text-lg font-bold text-text"
+              >{{ stats.currently_reading }}</span
+            >
+            <span class="text-sm font-medium text-accent">Reading</span>
+          </a>
+        </div>
+        <button
+          type="button"
+          aria-label="Scroll right"
+          class="hidden absolute -right-4 top-1/2 z-10 -translate-y-1/2 items-center justify-center rounded-full border bg-surface p-1.5 text-text-muted shadow-sm transition hover:text-text"
+          data-scroll-right
+          onclick="this.closest('chip-scroll').querySelector('[data-chip-scroll]').scrollBy({left: 200, behavior: 'smooth'})"
+        >
+          {{ icons::chevron_right("h-5 w-5") }}
+        </button>
+      </chip-scroll>
+    {% else %}
+      <div class="relative">
+        <div
+          class="grid grid-flow-col auto-cols-[45vw] md:auto-cols-[200px] gap-3 overflow-hidden blur-[2px] select-none pointer-events-none"
+          aria-hidden="true"
+        >
+          {% for _ in 0..4 %}
+            <div
+              class="flex flex-col items-center gap-1 rounded-lg border bg-surface p-4"
+            >
+              <div class="h-6 w-6 rounded-full bg-surface-alt"></div>
+              <div class="h-5 w-8 rounded bg-surface-alt"></div>
+              <div class="h-4 w-16 rounded bg-surface-alt"></div>
+            </div>
+          {% endfor %}
+        </div>
+        <div class="absolute inset-0 z-10 flex items-center justify-center">
+          <span class="text-lg font-semibold text-text-muted">No data yet</span>
+        </div>
+      </div>
+    {% endif %}
+  </section>
+{% endblock %}
