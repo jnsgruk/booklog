@@ -32,6 +32,7 @@ tower-http = { version = "0.6", features = ["compression-gzip", "limit", "set-he
 url = { version = "2", default-features = false }
 uuid = { version = "1", default-features = false, features = ["v4"] }
 webauthn-rs = { version = "0.5", features = ["conditional-ui"] }
+webauthn-rs-proto = "0.5"
 
 [features]
 e2e = []
