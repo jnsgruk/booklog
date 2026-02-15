@@ -11,3 +11,4 @@ mod edit_tests;
 mod image_tests;
 mod navigation_tests;
 mod reading_tests;
+mod timeline_tests;

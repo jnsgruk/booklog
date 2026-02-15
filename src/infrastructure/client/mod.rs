@@ -3,6 +3,7 @@ pub mod backup;
 pub mod books;
 pub mod genres;
 pub mod readings;
+pub mod timeline;
 pub mod tokens;
 pub mod user_books;
 
@@ -137,6 +138,10 @@ impl BooklogClient {
 
     pub fn genres(&self) -> genres::GenresClient<'_> {
         genres::GenresClient::new(self)
+    }
+
+    pub fn timeline(&self) -> timeline::TimelineClient<'_> {
+        timeline::TimelineClient::new(self)
     }
 
     pub fn user_books(&self) -> user_books::UserBooksClient<'_> {

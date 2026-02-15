@@ -339,6 +339,7 @@ pub(crate) async fn update_book(
 
     info!(%id, "book updated");
     state.stats_invalidator.invalidate(auth_user.effective.id);
+    state.timeline_invalidator.invalidate("book", i64::from(id));
 
     if let Some(cover_id) = &selected_cover_id {
         super::scan::promote_cover_suggestion(&state, "book", i64::from(id), cover_id).await;
@@ -371,7 +372,8 @@ define_delete_handler!(
     render_book_list_fragment,
     "type=books",
     "/data?type=books",
-    image_type: "book"
+    image_type: "book",
+    entity_type: "book"
 );
 
 /// Resolve an optional genre name to a `GenreId`, creating the genre if needed.

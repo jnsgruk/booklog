@@ -118,6 +118,10 @@ fn auth_admin_routes() -> axum::Router<AppState> {
         )
         .route("/admin/stop-impersonation", post(admin::stop_impersonation))
         .route("/stats/recompute", post(stats::recompute_stats))
+        .route(
+            "/timeline/rebuild",
+            post(system::timeline::rebuild_timeline),
+        )
 }
 
 fn image_routes() -> axum::Router<AppState> {

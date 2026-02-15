@@ -86,6 +86,7 @@ fn ensure_server_started() -> Result<(String, String), String> {
                     .expect("Failed to connect to test database");
 
                 let (stats_tx, _stats_rx) = tokio::sync::mpsc::channel(1);
+                let (timeline_tx, timeline_rx) = tokio::sync::mpsc::channel(32);
                 let state = AppState::from_database(
                     &database,
                     AppStateConfig {
@@ -97,7 +98,22 @@ fn ensure_server_started() -> Result<(String, String), String> {
                         stats_invalidator: booklog::application::services::StatsInvalidator::new(
                             stats_tx,
                         ),
+                        timeline_invalidator:
+                            booklog::application::services::TimelineInvalidator::new(timeline_tx),
                     },
+                );
+
+                // Spawn timeline rebuild task with 100ms debounce for tests
+                tokio::spawn(
+                    booklog::application::services::timeline_refresh::timeline_rebuild_task(
+                        timeline_rx,
+                        std::sync::Arc::clone(&state.author_repo),
+                        std::sync::Arc::clone(&state.book_repo),
+                        std::sync::Arc::clone(&state.genre_repo),
+                        std::sync::Arc::clone(&state.reading_repo),
+                        std::sync::Arc::clone(&state.timeline_repo),
+                        std::time::Duration::from_millis(100),
+                    ),
                 );
 
                 let app = app_router(state);

@@ -9,8 +9,9 @@ use tracing::info;
 use webauthn_rs::prelude::*;
 
 use crate::application::routes::app_router;
-use crate::application::services::StatsInvalidator;
 use crate::application::services::stats::stats_recomputation_task;
+use crate::application::services::timeline_refresh::{TimelineInvalidation, timeline_rebuild_task};
+use crate::application::services::{StatsInvalidator, TimelineInvalidator};
 use crate::application::state::{AppState, AppStateConfig};
 use crate::domain::registration_tokens::NewRegistrationToken;
 use crate::domain::repositories::{RegistrationTokenRepository, UserRepository};
@@ -44,6 +45,9 @@ pub async fn serve(config: ServerConfig) -> anyhow::Result<()> {
     let (stats_tx, stats_rx) = tokio::sync::mpsc::channel::<crate::domain::ids::UserId>(32);
     let stats_invalidator = StatsInvalidator::new(stats_tx);
 
+    let (timeline_tx, timeline_rx) = tokio::sync::mpsc::channel::<TimelineInvalidation>(32);
+    let timeline_invalidator = TimelineInvalidator::new(timeline_tx);
+
     let state = AppState::from_database(
         &database,
         AppStateConfig {
@@ -53,6 +57,7 @@ pub async fn serve(config: ServerConfig) -> anyhow::Result<()> {
             openrouter_api_key: config.openrouter_api_key,
             openrouter_model: config.openrouter_model,
             stats_invalidator: stats_invalidator.clone(),
+            timeline_invalidator,
         },
     );
 
@@ -61,6 +66,17 @@ pub async fn serve(config: ServerConfig) -> anyhow::Result<()> {
     tokio::spawn(stats_recomputation_task(
         stats_rx,
         stats_repo,
+        std::time::Duration::from_secs(2),
+    ));
+
+    // Spawn background timeline rebuild task
+    tokio::spawn(timeline_rebuild_task(
+        timeline_rx,
+        Arc::clone(&state.author_repo),
+        Arc::clone(&state.book_repo),
+        Arc::clone(&state.genre_repo),
+        Arc::clone(&state.reading_repo),
+        Arc::clone(&state.timeline_repo),
         std::time::Duration::from_secs(2),
     ));
 

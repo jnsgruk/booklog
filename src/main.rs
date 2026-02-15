@@ -3,7 +3,7 @@ use booklog::application::{ServerConfig, serve};
 use booklog::infrastructure::backup::BackupData;
 use booklog::infrastructure::client::BooklogClient;
 use booklog::presentation::cli::{
-    Cli, Commands, ServeCommand, authors, books, genres, readings, tokens, user_books,
+    Cli, Commands, ServeCommand, authors, books, genres, readings, timeline, tokens, user_books,
 };
 use clap::Parser;
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
@@ -42,6 +42,10 @@ async fn main() -> Result<()> {
         Commands::Token { command } => {
             let client = BooklogClient::from_base_url(&cli.api_url)?;
             tokens::run(&client, command).await
+        }
+        Commands::Timeline { command } => {
+            let client = BooklogClient::from_base_url(&cli.api_url)?;
+            timeline::run(&client, command).await
         }
         Commands::Backup(_cmd) => {
             let client = BooklogClient::from_base_url(&cli.api_url)?;

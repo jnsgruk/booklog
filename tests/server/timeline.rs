@@ -1,5 +1,6 @@
 use crate::helpers::{
-    create_author_with_payload, create_default_author, create_default_book, spawn_app_with_auth,
+    create_author_with_payload, create_default_author, create_default_book, spawn_app,
+    spawn_app_with_auth, spawn_app_with_timeline_sync,
 };
 use booklog::domain::authors::NewAuthor;
 use booklog::domain::book_items::{AuthorRole, BookAuthor, NewBook};
@@ -343,4 +344,205 @@ async fn shelving_a_book_surfaces_on_the_timeline() {
         body.contains("Test Book"),
         "Expected book title in shelved timeline event, got: {body}"
     );
+}
+
+// -- Timeline refresh tests --
+
+#[tokio::test]
+async fn editing_an_author_updates_timeline_events() {
+    let app = spawn_app_with_timeline_sync().await;
+    let client = Client::new();
+
+    let original_name = "Original Author";
+    let author = create_author_with_payload(
+        &app,
+        NewAuthor {
+            name: original_name.to_string(),
+            created_at: None,
+        },
+    )
+    .await;
+
+    // Also create a book so we can verify cascade
+    sleep(Duration::from_millis(5)).await;
+    create_book(&app, author.id, "Cascading Book").await;
+
+    // Verify original name appears in timeline
+    sleep(Duration::from_millis(10)).await;
+    let response = client
+        .get(format!("{}/timeline", app.address))
+        .send()
+        .await
+        .expect("failed to fetch timeline");
+    let body = response.text().await.expect("failed to read body");
+    assert!(
+        body.contains(original_name),
+        "Expected original author name in timeline"
+    );
+
+    // Update the author
+    let updated_name = "Updated Author";
+    let response = client
+        .put(app.api_url(&format!("/authors/{}", author.id)))
+        .bearer_auth(app.auth_token.as_ref().unwrap())
+        .json(&serde_json::json!({ "name": updated_name }))
+        .send()
+        .await
+        .expect("failed to update author");
+    assert_eq!(response.status(), 200);
+
+    // Wait for debounce + processing
+    sleep(Duration::from_millis(200)).await;
+
+    // Verify timeline now shows updated name in both author and book events
+    let response = client
+        .get(format!("{}/timeline", app.address))
+        .send()
+        .await
+        .expect("failed to fetch timeline after update");
+    let body = response.text().await.expect("failed to read body");
+    assert!(
+        body.contains(updated_name),
+        "Expected updated author name in timeline, got: {body}"
+    );
+    assert!(
+        !body.contains(original_name),
+        "Expected original author name to be replaced in timeline, got: {body}"
+    );
+}
+
+#[tokio::test]
+async fn editing_a_book_updates_timeline_events() {
+    let app = spawn_app_with_timeline_sync().await;
+    let client = Client::new();
+
+    let author = create_default_author(&app).await;
+    sleep(Duration::from_millis(5)).await;
+
+    let original_title = "Original Title";
+    let book = crate::helpers::create_book_with_title(&app, author.id, original_title).await;
+
+    // Create a reading to verify cascade
+    sleep(Duration::from_millis(5)).await;
+    crate::helpers::create_default_reading(&app, book.id).await;
+
+    // Verify original title appears in timeline
+    sleep(Duration::from_millis(10)).await;
+    let response = client
+        .get(format!("{}/timeline", app.address))
+        .send()
+        .await
+        .expect("failed to fetch timeline");
+    let body = response.text().await.expect("failed to read body");
+    assert!(
+        body.contains(original_title),
+        "Expected original book title in timeline"
+    );
+
+    // Update the book title
+    let updated_title = "Updated Title";
+    let response = client
+        .put(app.api_url(&format!("/books/{}", book.id)))
+        .bearer_auth(app.auth_token.as_ref().unwrap())
+        .json(&serde_json::json!({
+            "title": updated_title,
+            "author_ids": [author.id]
+        }))
+        .send()
+        .await
+        .expect("failed to update book");
+    assert_eq!(response.status(), 200);
+
+    // Wait for debounce + processing
+    sleep(Duration::from_millis(200)).await;
+
+    // Verify timeline now shows updated title in both book and reading events
+    let response = client
+        .get(format!("{}/timeline", app.address))
+        .send()
+        .await
+        .expect("failed to fetch timeline after update");
+    let body = response.text().await.expect("failed to read body");
+    assert!(
+        body.contains(updated_title),
+        "Expected updated book title in timeline, got: {body}"
+    );
+}
+
+#[tokio::test]
+async fn deleting_an_entity_removes_timeline_events() {
+    let app = spawn_app_with_auth().await;
+    let client = Client::new();
+
+    let author = create_author_with_payload(
+        &app,
+        NewAuthor {
+            name: "Doomed Author".to_string(),
+            created_at: None,
+        },
+    )
+    .await;
+
+    // Verify timeline event exists
+    sleep(Duration::from_millis(10)).await;
+    let response = client
+        .get(format!("{}/timeline", app.address))
+        .send()
+        .await
+        .expect("failed to fetch timeline");
+    let body = response.text().await.expect("failed to read body");
+    assert!(
+        body.contains("Doomed Author"),
+        "Expected author name in timeline before delete"
+    );
+
+    // Delete the author
+    let response = client
+        .delete(app.api_url(&format!("/authors/{}", author.id)))
+        .bearer_auth(app.auth_token.as_ref().unwrap())
+        .send()
+        .await
+        .expect("failed to delete author");
+    assert_eq!(response.status(), 204);
+
+    // Verify timeline event is gone
+    let response = client
+        .get(format!("{}/timeline", app.address))
+        .send()
+        .await
+        .expect("failed to fetch timeline after delete");
+    let body = response.text().await.expect("failed to read body");
+    assert!(
+        !body.contains("Doomed Author"),
+        "Expected author to be removed from timeline after delete, got: {body}"
+    );
+}
+
+#[tokio::test]
+async fn rebuild_endpoint_returns_204() {
+    let app = spawn_app_with_auth().await;
+    let client = Client::new();
+
+    let response = client
+        .post(app.api_url("/timeline/rebuild"))
+        .bearer_auth(app.auth_token.as_ref().unwrap())
+        .send()
+        .await
+        .expect("failed to call timeline rebuild");
+
+    assert_eq!(response.status(), 204);
+}
+
+#[tokio::test]
+async fn rebuild_endpoint_requires_auth() {
+    let app = spawn_app().await;
+    let client = Client::new();
+
+    let response = client
+        .post(app.api_url("/timeline/rebuild"))
+        .send()
+        .await
+        .expect("failed to call timeline rebuild");
+
+    assert_eq!(response.status(), 401);
 }

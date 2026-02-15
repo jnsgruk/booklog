@@ -69,14 +69,16 @@ pub async fn spawn_app() -> TestApp {
 }
 
 fn test_state_config() -> AppStateConfig {
-    let (tx, _rx) = tokio::sync::mpsc::channel(1);
+    let (stats_tx, _stats_rx) = tokio::sync::mpsc::channel(1);
+    let (timeline_tx, _timeline_rx) = tokio::sync::mpsc::channel(1);
     AppStateConfig {
         webauthn: test_webauthn(),
         insecure_cookies: true,
         openrouter_url: booklog::infrastructure::ai::OPENROUTER_URL.to_string(),
         openrouter_api_key: String::new(),
         openrouter_model: "openrouter/free".to_string(),
-        stats_invalidator: booklog::application::services::StatsInvalidator::new(tx),
+        stats_invalidator: booklog::application::services::StatsInvalidator::new(stats_tx),
+        timeline_invalidator: booklog::application::services::TimelineInvalidator::new(timeline_tx),
     }
 }
 
@@ -539,6 +541,85 @@ pub async fn create_non_admin_token(app: &TestApp) -> String {
         .expect("Failed to insert non-admin token");
 
     token_value
+}
+
+/// Spawn an authenticated test app with the timeline rebuild background task running.
+/// Uses a 50ms debounce so tests can verify timeline refreshes without long waits.
+pub async fn spawn_app_with_timeline_sync() -> TestApp {
+    let database = booklog::infrastructure::database::Database::connect("sqlite::memory:")
+        .await
+        .expect("Failed to connect to in-memory database");
+
+    let (stats_tx, _stats_rx) = tokio::sync::mpsc::channel(1);
+    let (timeline_tx, timeline_rx) = tokio::sync::mpsc::channel(32);
+
+    let config = AppStateConfig {
+        webauthn: test_webauthn(),
+        insecure_cookies: true,
+        openrouter_url: booklog::infrastructure::ai::OPENROUTER_URL.to_string(),
+        openrouter_api_key: String::new(),
+        openrouter_model: "openrouter/free".to_string(),
+        stats_invalidator: booklog::application::services::StatsInvalidator::new(stats_tx),
+        timeline_invalidator: booklog::application::services::TimelineInvalidator::new(timeline_tx),
+    };
+
+    let pool = database.clone_pool();
+    let state = AppState::from_database(&database, config);
+
+    // Spawn timeline rebuild task with short debounce for tests
+    tokio::spawn(
+        booklog::application::services::timeline_refresh::timeline_rebuild_task(
+            timeline_rx,
+            Arc::clone(&state.author_repo),
+            Arc::clone(&state.book_repo),
+            Arc::clone(&state.genre_repo),
+            Arc::clone(&state.reading_repo),
+            Arc::clone(&state.timeline_repo),
+            std::time::Duration::from_millis(50),
+        ),
+    );
+
+    let author_repo = state.author_repo.clone();
+    let book_repo = state.book_repo.clone();
+    let timeline_repo = state.timeline_repo.clone();
+    let user_repo = state.user_repo.clone();
+    let token_repo = state.token_repo.clone();
+    let session_repo = state.session_repo.clone();
+
+    let app = app_router(state);
+
+    let listener = TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("Failed to bind to random port");
+
+    let local_addr = listener.local_addr().expect("Failed to get local address");
+    let address = format!("http://{}", local_addr);
+
+    let server_handle = tokio::spawn(async move {
+        axum::serve(
+            listener,
+            app.into_make_service_with_connect_info::<std::net::SocketAddr>(),
+        )
+        .await
+        .expect("Server failed to start");
+    })
+    .abort_handle();
+
+    let app = TestApp {
+        address,
+        pool,
+        author_repo,
+        book_repo,
+        timeline_repo,
+        user_repo: Some(user_repo),
+        token_repo: Some(token_repo),
+        session_repo: Some(session_repo),
+        auth_token: None,
+        mock_server: None,
+        server_handle,
+    };
+
+    add_auth_to_app(app).await
 }
 
 pub async fn spawn_app_with_openrouter_mock() -> TestApp {

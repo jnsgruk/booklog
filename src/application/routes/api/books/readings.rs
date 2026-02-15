@@ -391,6 +391,9 @@ pub(crate) async fn update_reading(
 
     info!(%id, "reading updated");
     state.stats_invalidator.invalidate(auth_user.effective.id);
+    state
+        .timeline_invalidator
+        .invalidate("reading", i64::from(id));
 
     if is_datastar_request(&headers) {
         let from_reading_page = headers
@@ -439,6 +442,14 @@ pub(crate) async fn delete_reading(
         .delete(id)
         .await
         .map_err(AppError::from)?;
+
+    if let Err(err) = state
+        .timeline_repo
+        .delete_by_entity("reading", i64::from(id))
+        .await
+    {
+        tracing::warn!(%id, error = %err, "failed to delete reading timeline events");
+    }
 
     info!(%id, "reading deleted");
     state.stats_invalidator.invalidate(auth_user.effective.id);

@@ -85,6 +85,14 @@ booklog author add --name "George Orwell" --nationality "British"
 
 Run `booklog --help` for the full command reference.
 
+### Maintenance
+
+Rebuild timeline event snapshots (e.g. after editing entities whose changes need to propagate):
+
+```bash
+booklog timeline rebuild
+```
+
 ## Configuration
 
 All settings are read from environment variables or CLI flags. A `.env` file in the working

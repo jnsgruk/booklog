@@ -188,6 +188,24 @@ pub trait TimelineEventRepository: Send + Sync {
         request: &ListRequest<TimelineSortKey>,
     ) -> Result<Page<TimelineEvent>, RepositoryError>;
 
+    async fn update_by_entity(
+        &self,
+        entity_type: &str,
+        entity_id: i64,
+        title: &str,
+        details: &[crate::domain::timeline::TimelineEventDetail],
+        genres: &[String],
+        reading_data: Option<&crate::domain::timeline::TimelineReadingData>,
+    ) -> Result<(), RepositoryError>;
+
+    async fn delete_by_entity(
+        &self,
+        entity_type: &str,
+        entity_id: i64,
+    ) -> Result<(), RepositoryError>;
+
+    async fn delete_all(&self) -> Result<(), RepositoryError>;
+
     async fn list_all(&self) -> Result<Vec<TimelineEvent>, RepositoryError> {
         let sort_key = <TimelineSortKey as SortKey>::default();
         let request =

@@ -177,6 +177,9 @@ pub(crate) async fn update_author(
         .map_err(AppError::from)?;
     info!(%id, "author updated");
     state.stats_invalidator.invalidate(auth_user.effective.id);
+    state
+        .timeline_invalidator
+        .invalidate("author", i64::from(id));
 
     save_deferred_image(
         &state,
@@ -198,7 +201,8 @@ define_delete_handler!(
     render_author_list_fragment,
     "type=authors",
     "/data?type=authors",
-    image_type: "author"
+    image_type: "author",
+    entity_type: "author"
 );
 
 #[tracing::instrument(skip(state, auth_user, headers, payload))]

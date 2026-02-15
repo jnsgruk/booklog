@@ -4,6 +4,7 @@ pub mod books;
 pub mod genres;
 mod macros;
 pub mod readings;
+pub mod timeline;
 pub mod tokens;
 pub mod user_books;
 
@@ -17,6 +18,7 @@ use books::BookCommands;
 use clap::{Args, Parser, Subcommand};
 use genres::GenreCommands;
 use readings::ReadingCommands;
+use timeline::TimelineCommands;
 use tokens::TokenCommands;
 use user_books::UserBookCommands;
 
@@ -75,6 +77,12 @@ pub enum Commands {
     Token {
         #[command(subcommand)]
         command: TokenCommands,
+    },
+
+    /// Manage timeline events
+    Timeline {
+        #[command(subcommand)]
+        command: TimelineCommands,
     },
 
     /// Back up all book data to JSON (stdout)

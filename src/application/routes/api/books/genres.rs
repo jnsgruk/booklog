@@ -161,6 +161,9 @@ pub(crate) async fn update_genre(
         .map_err(AppError::from)?;
     info!(%id, "genre updated");
     state.stats_invalidator.invalidate(auth_user.effective.id);
+    state
+        .timeline_invalidator
+        .invalidate("genre", i64::from(id));
 
     let detail_url = format!("/genres/{}", genre.id);
     update_response(&headers, source, &detail_url, Json(genre).into_response())
@@ -173,7 +176,8 @@ define_delete_handler!(
     genre_repo,
     render_genre_list_fragment,
     "type=genres",
-    "/data?type=genres"
+    "/data?type=genres",
+    entity_type: "genre"
 );
 
 define_list_fragment_renderer!(

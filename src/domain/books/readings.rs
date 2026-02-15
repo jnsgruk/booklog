@@ -169,6 +169,13 @@ impl ReadingFilter {
         }
     }
 
+    pub fn for_book(book_id: BookId) -> Self {
+        Self {
+            book_id: Some(book_id),
+            ..Default::default()
+        }
+    }
+
     pub fn for_user_status(user_id: UserId, status: ReadingStatus) -> Self {
         Self {
             user_id: Some(user_id),
@@ -180,13 +187,6 @@ impl ReadingFilter {
     pub fn for_status(status: ReadingStatus) -> Self {
         Self {
             status: Some(status),
-            ..Default::default()
-        }
-    }
-
-    pub fn for_book(book_id: BookId) -> Self {
-        Self {
-            book_id: Some(book_id),
             ..Default::default()
         }
     }

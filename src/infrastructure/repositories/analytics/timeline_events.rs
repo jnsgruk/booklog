@@ -149,6 +149,72 @@ impl TimelineEventRepository for SqlTimelineEventRepository {
             }
         }
     }
+
+    async fn update_by_entity(
+        &self,
+        entity_type: &str,
+        entity_id: i64,
+        title: &str,
+        details: &[TimelineEventDetail],
+        genres: &[String],
+        reading_data: Option<&TimelineReadingData>,
+    ) -> Result<(), RepositoryError> {
+        let details_json = serde_json::to_string(details).map_err(|err| {
+            RepositoryError::unexpected(format!("failed to encode timeline event details: {err}"))
+        })?;
+
+        let genres_json = serde_json::to_string(genres).map_err(|err| {
+            RepositoryError::unexpected(format!("failed to encode timeline event genres: {err}"))
+        })?;
+
+        let reading_data_json = reading_data
+            .map(serde_json::to_string)
+            .transpose()
+            .map_err(|err| {
+                RepositoryError::unexpected(format!("failed to encode reading data: {err}"))
+            })?;
+
+        sqlx::query(
+            r"UPDATE timeline_events
+               SET title = ?, details_json = ?, genres_json = ?, reading_data_json = ?
+               WHERE entity_type = ? AND entity_id = ?",
+        )
+        .bind(title)
+        .bind(details_json)
+        .bind(genres_json)
+        .bind(reading_data_json)
+        .bind(entity_type)
+        .bind(entity_id)
+        .execute(&self.pool)
+        .await
+        .map_err(|err| RepositoryError::unexpected(err.to_string()))?;
+
+        Ok(())
+    }
+
+    async fn delete_by_entity(
+        &self,
+        entity_type: &str,
+        entity_id: i64,
+    ) -> Result<(), RepositoryError> {
+        sqlx::query("DELETE FROM timeline_events WHERE entity_type = ? AND entity_id = ?")
+            .bind(entity_type)
+            .bind(entity_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|err| RepositoryError::unexpected(err.to_string()))?;
+
+        Ok(())
+    }
+
+    async fn delete_all(&self) -> Result<(), RepositoryError> {
+        sqlx::query("DELETE FROM timeline_events")
+            .execute(&self.pool)
+            .await
+            .map_err(|err| RepositoryError::unexpected(err.to_string()))?;
+
+        Ok(())
+    }
 }
 
 #[derive(sqlx::FromRow)]

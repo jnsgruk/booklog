@@ -82,17 +82,18 @@ macro_rules! define_enriched_get_handler {
 ///     author_repo,
 ///     render_author_list_fragment,
 ///     "type=authors",
-///     "/data?type=authors"
+///     "/data?type=authors",
+///     entity_type: "author"
 /// );
 /// ```
 macro_rules! define_delete_handler {
-    ($fn_name:ident, $id_type:ty, $sort_key:ty, $repo_field:ident, $render_fragment:path, $referer_match:literal, $redirect_url:literal) => {
-        define_delete_handler!(@inner $fn_name, $id_type, $sort_key, $repo_field, $render_fragment, $referer_match, $redirect_url, None);
+    ($fn_name:ident, $id_type:ty, $sort_key:ty, $repo_field:ident, $render_fragment:path, $referer_match:literal, $redirect_url:literal, entity_type: $entity_type:literal) => {
+        define_delete_handler!(@inner $fn_name, $id_type, $sort_key, $repo_field, $render_fragment, $referer_match, $redirect_url, None, $entity_type);
     };
-    ($fn_name:ident, $id_type:ty, $sort_key:ty, $repo_field:ident, $render_fragment:path, $referer_match:literal, $redirect_url:literal, image_type: $image_type:literal) => {
-        define_delete_handler!(@inner $fn_name, $id_type, $sort_key, $repo_field, $render_fragment, $referer_match, $redirect_url, Some($image_type));
+    ($fn_name:ident, $id_type:ty, $sort_key:ty, $repo_field:ident, $render_fragment:path, $referer_match:literal, $redirect_url:literal, image_type: $image_type:literal, entity_type: $entity_type:literal) => {
+        define_delete_handler!(@inner $fn_name, $id_type, $sort_key, $repo_field, $render_fragment, $referer_match, $redirect_url, Some($image_type), $entity_type);
     };
-    (@inner $fn_name:ident, $id_type:ty, $sort_key:ty, $repo_field:ident, $render_fragment:path, $referer_match:literal, $redirect_url:literal, $image_type:expr) => {
+    (@inner $fn_name:ident, $id_type:ty, $sort_key:ty, $repo_field:ident, $render_fragment:path, $referer_match:literal, $redirect_url:literal, $image_type:expr, $entity_type:literal) => {
         #[tracing::instrument(skip(state, auth_user, headers, query))]
         pub(crate) async fn $fn_name(
             axum::extract::State(state): axum::extract::State<crate::application::state::AppState>,
@@ -114,6 +115,10 @@ macro_rules! define_delete_handler {
                 if let Err(err) = state.image_repo.delete(img_type, i64::from(id)).await {
                     tracing::warn!(%id, error = %err, "failed to delete entity image");
                 }
+            }
+
+            if let Err(err) = state.timeline_repo.delete_by_entity($entity_type, i64::from(id)).await {
+                tracing::warn!(%id, error = %err, "failed to delete timeline events");
             }
 
             tracing::info!(%id, "entity deleted");

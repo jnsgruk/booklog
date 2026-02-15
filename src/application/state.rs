@@ -3,7 +3,7 @@ use std::sync::Arc;
 use webauthn_rs::prelude::*;
 
 use crate::application::services::{
-    AuthorService, BookService, GenreService, ReadingService, StatsInvalidator,
+    AuthorService, BookService, GenreService, ReadingService, StatsInvalidator, TimelineInvalidator,
 };
 use crate::domain::repositories::{
     AiUsageRepository, AuthorRepository, BookRepository, CoverSuggestionRepository,
@@ -40,6 +40,7 @@ pub struct AppStateConfig {
     pub openrouter_api_key: String,
     pub openrouter_model: String,
     pub stats_invalidator: StatsInvalidator,
+    pub timeline_invalidator: TimelineInvalidator,
 }
 
 #[derive(Clone)]
@@ -72,6 +73,7 @@ pub struct AppState {
     pub reading_service: ReadingService,
     pub insecure_cookies: bool,
     pub stats_invalidator: StatsInvalidator,
+    pub timeline_invalidator: TimelineInvalidator,
     pub image_semaphore: Arc<tokio::sync::Semaphore>,
 }
 
@@ -157,6 +159,7 @@ impl AppState {
             reading_service,
             insecure_cookies: config.insecure_cookies,
             stats_invalidator: config.stats_invalidator,
+            timeline_invalidator: config.timeline_invalidator,
             image_semaphore: Arc::new(tokio::sync::Semaphore::new(4)),
         }
     }

@@ -1,10 +1,12 @@
 mod books;
 mod readings;
 pub mod stats;
+pub mod timeline_refresh;
 
 pub use books::BookService;
 pub use readings::ReadingService;
 pub use stats::StatsInvalidator;
+pub use timeline_refresh::TimelineInvalidator;
 
 use std::sync::Arc;
 
