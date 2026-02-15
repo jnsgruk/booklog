@@ -26,6 +26,15 @@
       </div>
 
       <div class="mt-6">
+        <input
+          type="text"
+          autocomplete="username webauthn"
+          id="conditional-ui-input"
+          class="hidden"
+          aria-hidden="true"
+          tabindex="-1"
+        />
+
         <button
           id="login-button"
           type="button"
@@ -45,46 +54,63 @@
   </div>
 
   <script>
-    document.addEventListener("DOMContentLoaded", function () {
+    let conditionalAbort = null;
+
+    const handleLogin = async () => {
+      if (conditionalAbort) {
+        conditionalAbort.abort();
+        conditionalAbort = null;
+      }
+
       const button = document.getElementById("login-button");
       const errorDiv = document.getElementById("login-error");
       const loadingDiv = document.getElementById("login-loading");
-      const unsupportedDiv = document.getElementById("login-unsupported");
 
-      // Check WebAuthn support
-      if (!window.PublicKeyCredential) {
-        button.disabled = true;
-        unsupportedDiv.classList.remove("hidden");
-        return;
-      }
+      errorDiv.classList.add("hidden");
+      loadingDiv.classList.remove("hidden");
+      button.disabled = true;
 
-      // Check for CLI callback query params
-      const params = new URLSearchParams(window.location.search);
-      let queryString = "";
-      if (params.has("cli_callback")) {
-        queryString = "?" + params.toString();
-      }
-
-      button.addEventListener("click", async function () {
-        errorDiv.classList.add("hidden");
-        loadingDiv.classList.remove("hidden");
-        button.disabled = true;
-
-        try {
-          const result = await startPasskeyAuthentication(queryString);
-
-          if (result.redirect) {
-            window.location.href = result.redirect;
-          } else {
-            window.location.href = "/";
-          }
-        } catch (err) {
-          errorDiv.textContent = err.message;
-          errorDiv.classList.remove("hidden");
-          loadingDiv.classList.add("hidden");
-          button.disabled = false;
+      try {
+        const params = new URLSearchParams(window.location.search);
+        let queryString = "";
+        if (params.has("cli_callback")) {
+          queryString = "?" + params.toString();
         }
-      });
-    });
+
+        const result = await startPasskeyAuthentication(queryString);
+        window.location.href = result.redirect || "/";
+      } catch (err) {
+        errorDiv.textContent = err.message;
+        errorDiv.classList.remove("hidden");
+        loadingDiv.classList.add("hidden");
+        button.disabled = false;
+      }
+    };
+
+    const initConditionalUI = async () => {
+      if (!window.PublicKeyCredential?.isConditionalMediationAvailable) return;
+      const available =
+        await PublicKeyCredential.isConditionalMediationAvailable();
+      if (!available) return;
+
+      conditionalAbort = new AbortController();
+      try {
+        const result = await startConditionalUIAuthentication(
+          conditionalAbort.signal,
+        );
+        window.location.href = result.redirect || "/";
+      } catch {
+        // Silently ignored — user may use the button instead, or the
+        // abort controller was triggered by handleLogin().
+      }
+    };
+
+    if (!window.PublicKeyCredential) {
+      document.getElementById("login-button").disabled = true;
+      document.getElementById("login-unsupported").classList.remove("hidden");
+    } else {
+      document.getElementById("login-button").onclick = handleLogin;
+      initConditionalUI();
+    }
   </script>
 {% endblock %}
