@@ -1,6 +1,6 @@
 use anyhow::Result;
 use base64::{Engine as _, engine::general_purpose};
-use rand::RngCore;
+use rand::Rng;
 use sha2::{Digest, Sha256};
 
 /// Generates a cryptographically secure random token
