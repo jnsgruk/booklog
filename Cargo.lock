@@ -2726,9 +2726,9 @@ dependencies = [
 
 [[package]]
 name = "thirtyfour"
-version = "0.36.3"
+version = "0.37.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "801f15adc5e2882c13b36d48003e5512b017e7b89ebf5fb35d59074a261e6afb"
+checksum = "c23ea3ddea759604ee20091e361347531cbdd5e4575435dc87e55ad7bcae5775"
 dependencies = [
  "arc-swap",
  "async-trait",
@@ -2747,6 +2747,7 @@ dependencies = [
  "stringmatch",
  "thiserror 2.0.18",
  "tokio",
+ "tokio-stream",
  "tracing",
  "url",
 ]
@@ -2902,6 +2903,7 @@ dependencies = [
  "futures-core",
  "pin-project-lite",
  "tokio",
+ "tokio-util",
 ]
 
 [[package]]

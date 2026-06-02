@@ -44,7 +44,7 @@ tempfile = { version = "3.27", default-features = false }
 once_cell = { version = "1.21", default-features = false }
 wiremock = "0.6"
 paste = "1.0.15"
-thirtyfour = { version = "0.36", default-features = false, features = ["reqwest"] }
+thirtyfour = { version = "0.37", default-features = false, features = ["reqwest"] }
 
 [[test]]
 name = "cli"
