@@ -1,4 +1,4 @@
-use sqlx::{FromRow, QueryBuilder, query_scalar};
+use sqlx::{AssertSqlSafe, FromRow, QueryBuilder, query_scalar};
 
 use crate::domain::RepositoryError;
 use crate::domain::listing::{ListRequest, Page, PageSize, SortKey};
@@ -123,7 +123,7 @@ async fn fetch_count(
             .map_err(|err| RepositoryError::unexpected(err.to_string()))?;
         Ok(row.0)
     } else {
-        query_scalar(count_query)
+        query_scalar(AssertSqlSafe(count_query))
             .fetch_one(pool)
             .await
             .map_err(|err| RepositoryError::unexpected(err.to_string()))
@@ -132,7 +132,7 @@ async fn fetch_count(
 
 /// Appends a LIKE-based search condition to the query builder.
 pub(crate) fn push_search_condition(
-    qb: &mut QueryBuilder<'_, DatabaseDriver>,
+    qb: &mut QueryBuilder<DatabaseDriver>,
     search: &SearchFilter,
     has_where: bool,
 ) {
@@ -152,7 +152,7 @@ pub(crate) fn push_search_condition(
 }
 
 fn append_search_condition(
-    qb: &mut QueryBuilder<'_, DatabaseDriver>,
+    qb: &mut QueryBuilder<DatabaseDriver>,
     base_sql: &str,
     search: &SearchFilter,
 ) {

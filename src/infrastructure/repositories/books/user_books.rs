@@ -286,7 +286,7 @@ impl UserBookRepository for SqlUserBookRepository {
         });
 
         let push_filters =
-            |builder: &mut QueryBuilder<'_, crate::infrastructure::database::DatabaseDriver>| {
+            |builder: &mut QueryBuilder<crate::infrastructure::database::DatabaseDriver>| {
                 builder.push_bind(user_id.into_inner());
                 if let Some(s) = &shelf {
                     builder.push(" AND ub.shelf = ");

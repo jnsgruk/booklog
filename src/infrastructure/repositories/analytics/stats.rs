@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use sqlx::{QueryBuilder, Row, query_as, query_scalar};
+use sqlx::{AssertSqlSafe, QueryBuilder, Row, query_as, query_scalar};
 
 use crate::domain::RepositoryError;
 use crate::domain::ids::UserId;
@@ -50,7 +50,7 @@ fn name_counts(records: Vec<NameCount>) -> Vec<(String, u64)> {
         .collect()
 }
 
-fn push_year_filter(qb: &mut QueryBuilder<'_, DatabaseDriver>, year: Option<i32>, column: &str) {
+fn push_year_filter(qb: &mut QueryBuilder<DatabaseDriver>, year: Option<i32>, column: &str) {
     if let Some(y) = year {
         qb.push(format!(" AND CAST(strftime('%Y', {column}) AS INTEGER) = "));
         qb.push_bind(y);
@@ -176,24 +176,24 @@ impl SqlStatsRepository {
         year: i32,
         cte: &str,
     ) -> Result<(Option<TitlePages>, Option<TitlePages>), RepositoryError> {
-        let longest = query_as::<_, TitlePages>(&format!(
+        let longest = query_as::<_, TitlePages>(AssertSqlSafe(format!(
             "{cte} SELECT b.title, b.page_count \
              FROM year_books yb JOIN books b ON b.id = yb.book_id \
              WHERE b.page_count IS NOT NULL \
              ORDER BY b.page_count DESC LIMIT 1"
-        ))
+        )))
         .bind(uid)
         .bind(year)
         .fetch_optional(&self.pool)
         .await
         .map_err(db_err)?;
 
-        let shortest = query_as::<_, TitlePages>(&format!(
+        let shortest = query_as::<_, TitlePages>(AssertSqlSafe(format!(
             "{cte} SELECT b.title, b.page_count \
              FROM year_books yb JOIN books b ON b.id = yb.book_id \
              WHERE b.page_count IS NOT NULL \
              ORDER BY b.page_count ASC LIMIT 1"
-        ))
+        )))
         .bind(uid)
         .bind(year)
         .fetch_optional(&self.pool)
@@ -253,7 +253,7 @@ impl SqlStatsRepository {
         year: i32,
         cte: &str,
     ) -> Result<(Vec<NameCount>, Vec<NameCount>), RepositoryError> {
-        let page_distribution: Vec<NameCount> = query_as(&format!(
+        let page_distribution: Vec<NameCount> = query_as(AssertSqlSafe(format!(
             "{cte} SELECT \
                CASE \
                  WHEN b.page_count < 200 THEN '< 200' \
@@ -266,19 +266,19 @@ impl SqlStatsRepository {
              JOIN books b ON b.id = yb.book_id \
              WHERE b.page_count IS NOT NULL \
              GROUP BY name ORDER BY MIN(b.page_count)"
-        ))
+        )))
         .bind(uid)
         .bind(year)
         .fetch_all(&self.pool)
         .await
         .map_err(db_err)?;
 
-        let year_distribution: Vec<NameCount> = query_as(&format!(
+        let year_distribution: Vec<NameCount> = query_as(AssertSqlSafe(format!(
             "{cte} SELECT (b.year_published / 10 * 10) || 's' AS name, COUNT(*) AS count \
              FROM year_books yb JOIN books b ON b.id = yb.book_id \
              WHERE b.year_published IS NOT NULL \
              GROUP BY b.year_published / 10 ORDER BY count DESC"
-        ))
+        )))
         .bind(uid)
         .bind(year)
         .fetch_all(&self.pool)
@@ -913,44 +913,46 @@ impl StatsRepository for SqlStatsRepository {
                      AND CAST(strftime('%Y', r.finished_at) AS INTEGER) = ?
                )";
 
-        let total_books: i64 = query_scalar(&format!("{cte} SELECT COUNT(*) FROM year_books"))
-            .bind(uid)
-            .bind(year)
-            .fetch_one(&self.pool)
-            .await
-            .map_err(db_err)?;
-
-        let total_authors: i64 = query_scalar(&format!(
-            "{cte} SELECT COUNT(DISTINCT ba.author_id) \
-             FROM year_books yb JOIN book_authors ba ON ba.book_id = yb.book_id"
-        ))
+        let total_books: i64 = query_scalar(AssertSqlSafe(format!(
+            "{cte} SELECT COUNT(*) FROM year_books"
+        )))
         .bind(uid)
         .bind(year)
         .fetch_one(&self.pool)
         .await
         .map_err(db_err)?;
 
-        let genre_records: Vec<NameCount> = query_as(&format!(
+        let total_authors: i64 = query_scalar(AssertSqlSafe(format!(
+            "{cte} SELECT COUNT(DISTINCT ba.author_id) \
+             FROM year_books yb JOIN book_authors ba ON ba.book_id = yb.book_id"
+        )))
+        .bind(uid)
+        .bind(year)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(db_err)?;
+
+        let genre_records: Vec<NameCount> = query_as(AssertSqlSafe(format!(
             "{cte} SELECT g.name AS name, COUNT(*) AS count \
              FROM year_books yb \
              JOIN books b ON b.id = yb.book_id \
              JOIN genres g ON g.id IN (b.primary_genre_id, b.secondary_genre_id) \
              WHERE g.id IS NOT NULL \
              GROUP BY g.id ORDER BY count DESC"
-        ))
+        )))
         .bind(uid)
         .bind(year)
         .fetch_all(&self.pool)
         .await
         .map_err(db_err)?;
 
-        let top_author = query_as::<_, NameCount>(&format!(
+        let top_author = query_as::<_, NameCount>(AssertSqlSafe(format!(
             "{cte} SELECT a.name AS name, COUNT(*) AS count \
              FROM year_books yb \
              JOIN book_authors ba ON ba.book_id = yb.book_id \
              JOIN authors a ON ba.author_id = a.id \
              GROUP BY a.id ORDER BY count DESC LIMIT 1"
-        ))
+        )))
         .bind(uid)
         .bind(year)
         .fetch_optional(&self.pool)

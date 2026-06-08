@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use async_trait::async_trait;
 use chrono::{DateTime, NaiveDate, Utc};
-use sqlx::{QueryBuilder, query_as};
+use sqlx::{AssertSqlSafe, QueryBuilder, query_as};
 
 use crate::domain::RepositoryError;
 use crate::domain::ids::{BookId, ReadingId, UserId};
@@ -154,7 +154,7 @@ impl SqlReadingRepository {
     }
 
     fn push_filter(
-        qb: &mut QueryBuilder<'_, crate::infrastructure::database::DatabaseDriver>,
+        qb: &mut QueryBuilder<crate::infrastructure::database::DatabaseDriver>,
         filter: &ReadingFilter,
     ) -> bool {
         let mut has_condition = false;
@@ -237,7 +237,7 @@ impl ReadingRepository for SqlReadingRepository {
     async fn get_with_book(&self, id: ReadingId) -> Result<ReadingWithBook, RepositoryError> {
         let query = format!("{BASE_SELECT} WHERE r.id = ? {BASE_GROUP_BY}");
 
-        let record = query_as::<_, ReadingWithBookRecord>(&query)
+        let record = query_as::<_, ReadingWithBookRecord>(AssertSqlSafe(query))
             .bind(id.into_inner())
             .fetch_optional(&self.pool)
             .await
